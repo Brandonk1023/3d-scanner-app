@@ -29,6 +29,9 @@ class ArFrameSnapshot(
     val reticle: FloatArray?,
     /** Model matrix of the box anchor; null when there's no box or the anchor isn't tracking. */
     val anchor: FloatArray?,
+    val timestampNs: Long,
+    /** ARCore ambient pixel intensity 0..1, null when not estimated. */
+    val lightIntensity: Float?,
 )
 
 /**

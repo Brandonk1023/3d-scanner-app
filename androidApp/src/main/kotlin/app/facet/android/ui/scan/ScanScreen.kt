@@ -96,18 +96,27 @@ import app.facet.scan.TrackingState
 import app.facet.ui.scan.PlacementStage
 import app.facet.ui.scan.PlacementUiState
 import app.facet.ui.scan.PlacementViewModel
+import app.facet.ui.scan.ScanSetup
+import app.facet.scan.ResultMode
+import app.facet.scan.ScanTuning
+import app.facet.android.ar.CaptureEngine
+import app.facet.android.ar.MediaPipeSegmenter
+import app.facet.geometry.BoxSize
+import androidx.compose.runtime.DisposableEffect
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlin.math.roundToInt
 
 /**
- * The `scan` route. Phase 2: placement — Find surface (Placement-Surface.png) and Fit box
- * (Placement-Box.png). Start scan runs its checks, then shows a placeholder until capture lands
- * in Phase 3. Always dark (the caller wraps it in the dark theme).
+ * The `scan` route: placement — Find surface (Placement-Surface.png) and Fit box
+ * (Placement-Box.png) — then capture ([CaptureLayer]) over the same AR session. Always dark (the
+ * caller wraps it in the dark theme).
  */
 @Composable
-fun ScanScreen(onClose: () -> Unit) {
+fun ScanScreen(onClose: () -> Unit, onResult: (scanId: String, mode: ResultMode) -> Unit) {
     val context = LocalContext.current
     val container = appContainer()
     val vm: PlacementViewModel = viewModel { PlacementViewModel(container.settings, container.storage) }
@@ -117,6 +126,42 @@ fun ScanScreen(onClose: () -> Unit) {
     // Passed down as State so only the overlay pieces that read it redraw every camera frame.
     val frames = ar.frames.collectAsState()
     val haptics = LocalHapticFeedback.current
+
+    /** The running capture, once Start scan has passed its checks. */
+    var capture by remember { mutableStateOf<Pair<ScanSetup, CaptureEngine>?>(null) }
+    var captureFailed by remember { mutableStateOf(false) }
+    LaunchedEffect(state.started) {
+        val setup = state.started ?: return@LaunchedEffect
+        vm.consumeStarted()
+        val tuning = ScanTuning.Default
+        // The volume reaches past the placed box so carving doesn't clip the object's top and sides.
+        val r = tuning.reconstruction
+        val volumeSize = setup.box.size.let {
+            BoxSize(it.widthMm + 2 * r.volumeMarginSideMm, it.depthMm + 2 * r.volumeMarginSideMm, it.heightMm + r.volumeMarginTopMm)
+        }
+        val voxel = tuning.liveVoxelMm(volumeSize)
+        val volume = withContext(Dispatchers.Default) {
+            runCatching { container.meshEngine.createVolume(volumeSize, voxel, tuning.truncationMm(voxel)) }.getOrNull()
+        }
+        if (volume == null) {
+            captureFailed = true
+            return@LaunchedEffect
+        }
+        val dir = context.filesDir.resolve("scans/scan-${System.currentTimeMillis()}")
+        val appContext = context.applicationContext
+        val engine = CaptureEngine(volume, setup.box, dir, tuning, ar.depthFusedSink()) { MediaPipeSegmenter(appContext) }
+        ar.startCapture(engine)
+        capture = setup to engine
+    }
+    DisposableEffect(capture) {
+        val engine = capture?.second
+        onDispose {
+            if (engine != null) {
+                ar.stopCapture()
+                engine.close()
+            }
+        }
+    }
 
     /** A short-lived message that replaces the banner for a moment. */
     var notice by remember { mutableStateOf<Int?>(null) }
@@ -137,6 +182,7 @@ fun ScanScreen(onClose: () -> Unit) {
                 ArEvent.Measuring -> vm.onFitStarted()
                 ArEvent.PlaceMissed -> notice = R.string.place_missed
                 is ArEvent.Fitted -> vm.onFitResult(event.box)
+                is ArEvent.DepthFused -> Unit // handled by CaptureLayer
             }
         }
     }
@@ -150,22 +196,73 @@ fun ScanScreen(onClose: () -> Unit) {
         }
     }
     LaunchedEffect(state.torchOn) { ar.setTorch(state.torchOn) }
-    SideEffect { ar.showPlanes = state.stage == PlacementStage.FINDING_SURFACE }
+    SideEffect { ar.showPlanes = capture == null && state.stage == PlacementStage.FINDING_SURFACE }
 
     val startOver = {
         ar.clearAnchor()
         vm.clearBox()
     }
-    BackHandler(enabled = state.stage == PlacementStage.FITTING_BOX, onBack = startOver)
+    BackHandler(enabled = capture == null && state.stage == PlacementStage.FITTING_BOX, onBack = startOver)
     LightSystemBarIcons()
-
-    val tracking by remember { derivedStateOf { frames.value?.tracking ?: TrackingState.NOT_TRACKING } }
-    val failure by remember { derivedStateOf { frames.value?.failure ?: TrackingFailure.NONE } }
-    val boxVisible by remember { derivedStateOf { frames.value?.anchor != null } }
 
     Box(Modifier.fillMaxSize().background(Color.Black)) {
         ArCameraView(ar, Modifier.fillMaxSize())
 
+        val running = capture
+        if (running != null) {
+            CaptureLayer(
+                setup = running.first,
+                engine = running.second,
+                ar = ar,
+                frames = frames,
+                torchOn = state.torchOn,
+                onTorch = vm::toggleTorch,
+                onDiscarded = onClose,
+                onResult = onResult,
+            )
+        } else {
+            PlacementLayer(state, vm, ar, frames, status, notice, startOver, onClose)
+        }
+    }
+
+    state.lowStorage?.let { low ->
+        InfoDialog(
+            title = stringResource(R.string.scan_low_storage_title),
+            body = {
+                Text(
+                    stringResource(R.string.scan_low_storage_body, formatBytes(low.neededBytes), formatBytes(low.freeBytes)),
+                    color = Facet.colors.textMuted,
+                )
+            },
+            onDismiss = vm::dismissLowStorage,
+        )
+    }
+    if (captureFailed) {
+        InfoDialog(
+            title = stringResource(R.string.ar_error_title),
+            body = { Text(stringResource(R.string.capture_no_memory), color = Facet.colors.textMuted) },
+            onDismiss = { captureFailed = false },
+        )
+    }
+}
+
+/** Find surface + Fit box overlays, gestures, handles and panels. */
+@Composable
+private fun PlacementLayer(
+    state: PlacementUiState,
+    vm: PlacementViewModel,
+    ar: ArController,
+    frames: State<ArFrameSnapshot?>,
+    status: ArStatus,
+    notice: Int?,
+    startOver: () -> Unit,
+    onClose: () -> Unit,
+) {
+    val tracking by remember { derivedStateOf { frames.value?.tracking ?: TrackingState.NOT_TRACKING } }
+    val failure by remember { derivedStateOf { frames.value?.failure ?: TrackingFailure.NONE } }
+    val boxVisible by remember { derivedStateOf { frames.value?.anchor != null } }
+
+    Box(Modifier.fillMaxSize()) {
         val stage = state.stage
         val box = state.box
         Canvas(Modifier.fillMaxSize()) {
@@ -244,33 +341,6 @@ fun ScanScreen(onClose: () -> Unit) {
         (status as? ArStatus.Failed)?.let { failed ->
             ArErrorCard(failed.reason, onClose, Modifier.align(Alignment.Center))
         }
-    }
-
-    state.lowStorage?.let { low ->
-        InfoDialog(
-            title = stringResource(R.string.scan_low_storage_title),
-            body = {
-                Text(
-                    stringResource(R.string.scan_low_storage_body, formatBytes(low.neededBytes), formatBytes(low.freeBytes)),
-                    color = Facet.colors.textMuted,
-                )
-            },
-            onDismiss = vm::dismissLowStorage,
-        )
-    }
-    state.started?.let { setup ->
-        // TODO(Phase 3): hand the setup to capture instead of this placeholder.
-        val typeLabel = stringResource(if (setup.scanType == ScanType.ONE_SIDE) R.string.scan_type_side else R.string.scan_type_full)
-        InfoDialog(
-            title = stringResource(R.string.stub_capture_title),
-            body = {
-                Text(
-                    stringResource(R.string.stub_capture_body, boxSizeText(setup.box.size, state.units), typeLabel),
-                    color = Facet.colors.textMuted,
-                )
-            },
-            onDismiss = vm::consumeStarted,
-        )
     }
 }
 

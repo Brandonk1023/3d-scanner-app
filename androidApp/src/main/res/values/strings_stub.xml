@@ -2,8 +2,6 @@
 <!-- Navigation stubs for screens built in later phases. Delete entries as the real screens land. -->
 <resources>
     <string name="stub_note" translatable="false">Stub screen · reference: %1$s</string>
-    <string name="stub_capture_title" translatable="false">Capture comes next</string>
-    <string name="stub_capture_body" translatable="false">Placement is done. Scanning inside the box arrives in Phase 3.\n\nBox: %1$s\nScan type: %2$s</string>
     <string name="stub_processing_title" translatable="false">Processing · %1$s</string>
     <string name="stub_processing_done" translatable="false">Simulate: processing done</string>
     <string name="stub_export_later" translatable="false">Saving and sharing files arrives in Phase 5.</string>

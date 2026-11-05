@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(facet_core VERSION 0.1.0 LANGUAGES CXX)
+project(facet_core VERSION 0.2.0 LANGUAGES CXX)
 
 # Shared C++ reconstruction core. Built as:
 #   - a static library linked into libfacet_jni.so on Android (native/android/src/main/cpp)
@@ -13,6 +13,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 add_library(facet_core STATIC
     src/facet_mesh.cpp
+    src/tsdf.cpp
 )
 target_include_directories(facet_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_options(facet_core PRIVATE -Wall -Wextra -Wpedantic)

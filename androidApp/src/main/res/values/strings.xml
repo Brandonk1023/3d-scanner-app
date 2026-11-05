@@ -209,11 +209,27 @@
     <string name="toast_ring_low">Low angles done</string>
     <string name="toast_ring_mid">Mid angles done</string>
     <string name="toast_ring_high">High angles done</string>
+    <string name="a11y_complete">Complete</string>
+    <string name="scanning_paused">PAUSED %1$s</string>
+    <string name="cd_mesh_show">Show mesh overlay</string>
+    <string name="cd_finish_disabled">Finish, available after %1$d%% coverage</string>
+    <string name="capture_cancel_title">Discard this scan?</string>
+    <string name="capture_cancel_body">What you\'ve scanned so far will be deleted.</string>
+    <string name="capture_looking">Looking for where you stopped…</string>
+    <string name="capture_empty">Nothing usable was captured yet. Keep scanning.</string>
+    <string name="capture_building">Building your result…</string>
+    <string name="capture_no_memory">This box is too big to scan on this phone. Make it smaller and try again.</string>
     <string name="tracking_paused_note">Capture is paused until tracking returns. Nothing you\'ve scanned is lost.</string>
 
     <!-- Finish -->
     <string name="incomplete_title">High angles missing</string>
     <string name="incomplete_body">The top may come out open or lumpy. %1$d%% covered.</string>
+    <string name="incomplete_title_mid">Mid angles missing</string>
+    <string name="incomplete_body_mid">The sides may come out open or lumpy. %1$d%% covered.</string>
+    <string name="incomplete_title_low">Low angles missing</string>
+    <string name="incomplete_body_low">The bottom edge may come out open or lumpy. %1$d%% covered.</string>
+    <string name="incomplete_title_overall">Not much covered yet</string>
+    <string name="incomplete_body_overall">Parts of the object may come out open or lumpy. %1$d%% covered.</string>
     <string name="keep_scanning">Keep scanning</string>
     <string name="finish_anyway">Finish anyway</string>
     <string name="incomplete_tip">Scanning something big? Pick One side at placement to skip this check.</string>

@@ -279,7 +279,11 @@ private fun Legend(color: Color, text: String) {
 private fun LicencesDialog(onDismiss: () -> Unit) {
     val context = LocalContext.current
     val text = remember {
-        listOf("Inter Tight" to "licenses/inter_tight_OFL.txt", "JetBrains Mono" to "licenses/jetbrains_mono_OFL.txt")
+        listOf(
+            "Inter Tight" to "licenses/inter_tight_OFL.txt",
+            "JetBrains Mono" to "licenses/jetbrains_mono_OFL.txt",
+            "MediaPipe" to "licenses/mediapipe_APACHE-2.0.txt",
+        )
             .joinToString("\n\n") { (name, path) ->
                 val body = runCatching { context.assets.open(path).bufferedReader().use { it.readText() } }.getOrDefault("")
                 "$name\n\n$body"

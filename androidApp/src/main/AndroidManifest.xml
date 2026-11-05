@@ -7,6 +7,8 @@
 
     <!-- Privacy: nothing leaves the phone. Strip INTERNET even if a library tries to add it. -->
     <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+    <!-- MediaPipe's dependencies ask for this; segmentation runs fully on device without it. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" tools:node="remove" />
 
     <!-- AR-capable devices only (Play Store filter). Depth API support is checked at runtime. -->
     <uses-feature android:name="android.hardware.camera.ar" android:required="true" />

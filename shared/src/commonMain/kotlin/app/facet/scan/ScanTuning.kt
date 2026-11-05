@@ -105,6 +105,51 @@ data class ScanTuning(
 
     data class Reconstruction(
         val livePreviewMinHz: Double = 5.0,
+        /** Live volume voxel count cap; the voxel grows past the Quick size if the box needs more. */
+        val liveMaxVoxels: Int = 2_500_000,
+        /** Phone depth is coarse (S24 Ultra: ~3.7 mm per pixel at 40 cm); finer voxels only fuse noise. */
+        val liveVoxelMinMm: Double = 2.0,
+        /** TSDF truncation: max(this many voxels, [truncationMinMm]); must exceed phone depth noise. */
+        val truncationVoxels: Double = 4.0,
+        val truncationMinMm: Double = 8.0,
+        /** Depth samples below this confidence (0..1) aren't fused at all. */
+        val fuseMinConfidence: Float = 0.6f,
+        /** Surface needs this much accumulated confidence weight to appear in a mesh. */
+        val meshMinWeight: Float = 6f,
+        /** Mesh triangles lying entirely within this of the table are the table itself (until Phase 4 cleanup). */
+        val tableClipMm: Float = 6f,
+        /** Live preview samples every Nth voxel. */
+        val livePreviewStep: Int = 2,
+        // Silhouette carving (Quick result). Tuned on an S24 Ultra mug scan, 236 photos.
+        /** A voxel is carved away when outside the object in more than this fraction of the photos that saw it. */
+        val carveMaxOutsideFraction: Float = 0.1f,
+        /** Voxels seen in fewer photos than this are treated as empty. */
+        val carveMinSeen: Int = 10,
+        /** Below this many carved photos, Quick falls back to the depth-only mesh. */
+        val carveMinViews: Int = 20,
+        /** Masks outside this area range (fraction of the photo) are rejected. */
+        val carveMinMaskArea: Float = 0.002f,
+        val carveMaxMaskArea: Float = 0.6f,
+        /** Height of the seed point inside the box (fraction of box height). */
+        val carveSeedHeight: Float = 0.4f,
+        /** The volume extends past the placed box so the object's top and sides aren't clipped. */
+        val volumeMarginSideMm: Double = 15.0,
+        val volumeMarginTopMm: Double = 25.0,
+        // Depth calibration against the AR table (DepthCalibration).
+        /** Table pixels this close to the box footprint are skipped (the object, its shadow). */
+        val calibrationFootprintMarginMm: Double = 40.0,
+        val calibrationMinConfidence: Float = 0.5f,
+        val calibrationMaxDistanceMm: Float = 1_200f,
+        /** Ratios outside this range aren't the table (floor past the edge, other objects). */
+        val calibrationMinRatio: Double = 0.75,
+        val calibrationMaxRatio: Double = 1.25,
+        val calibrationMinSamples: Int = 150,
+        /** Table pixels seen at a shallower angle than this are too unreliable (grazing views). */
+        val calibrationMinIncidenceDeg: Double = 25.0,
+        /** The scale locks to the median of this many per-frame estimates. */
+        val calibrationLockFrames: Int = 30,
+        val calibrationPixelStep: Int = 2,
+
         val quickVoxelDivisor: Double = 250.0,
         val quickVoxelMinMm: Double = 1.0,
         val quickVoxelMaxMm: Double = 10.0,
@@ -143,6 +188,15 @@ data class ScanTuning(
     fun quickVoxelMm(box: BoxSize): Double = with(reconstruction) {
         (box.diagonalMm / quickVoxelDivisor).coerceIn(quickVoxelMinMm, quickVoxelMaxMm)
     }
+
+    /** Live fusion voxel: the Quick voxel, grown if needed to stay under [Reconstruction.liveMaxVoxels]. */
+    fun liveVoxelMm(box: BoxSize): Double {
+        val cap = kotlin.math.cbrt(box.widthMm * box.depthMm * box.heightMm / reconstruction.liveMaxVoxels)
+        return maxOf(quickVoxelMm(box), cap, reconstruction.liveVoxelMinMm)
+    }
+
+    fun truncationMm(voxelMm: Double): Double =
+        maxOf(reconstruction.truncationVoxels * voxelMm, reconstruction.truncationMinMm)
 
     fun highDetailVoxelMm(box: BoxSize): Double = with(reconstruction) {
         (box.diagonalMm / highDetailVoxelDivisor).coerceIn(highDetailVoxelMinMm, highDetailVoxelMaxMm)

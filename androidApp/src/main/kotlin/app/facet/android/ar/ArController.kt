@@ -49,6 +49,9 @@ sealed interface ArEvent {
 
     /** Fit to object finished; null = nothing recognisable near the box. */
     data class Fitted(val box: PlacedBox?) : ArEvent
+
+    /** Capture: a depth map was fused into the volume (any thread → collected on main). */
+    data class DepthFused(val meanConfidence: Float) : ArEvent
 }
 
 sealed interface ArStatus {
@@ -82,6 +85,11 @@ class ArController(context: Context, private val tuning: ScanTuning = ScanTuning
     @Volatile var showPlanes: Boolean = true
 
     @Volatile private var session: Session? = null
+
+    /** The running capture, if any (Phase 3). Set from the main thread, used on the GL thread. */
+    @Volatile var capture: CaptureEngine? = null
+        private set
+    private var captureGlReady: CaptureEngine? = null
     private var config: Config? = null
     private val commands = ConcurrentLinkedQueue<Command>()
 
@@ -113,6 +121,20 @@ class ArController(context: Context, private val tuning: ScanTuning = ScanTuning
     fun setTorch(on: Boolean) { commands += Command.Torch(on) }
 
     fun clearAnchor() { commands += Command.ClearAnchor }
+
+    /** Starts fusing into [engine] (the box must be anchored). */
+    fun startCapture(engine: CaptureEngine) {
+        showPlanes = false
+        capture = engine
+    }
+
+    /** Stops drawing and fusing; the caller closes the engine. */
+    fun stopCapture() {
+        capture = null
+    }
+
+    /** For [CaptureEngine] construction: emits [ArEvent.DepthFused] from the fusion thread. */
+    fun depthFusedSink(): (Float) -> Unit = { _events.tryEmit(ArEvent.DepthFused(it)) }
 
     // ---- Lifecycle (main thread) -------------------------------------------------------------
 
@@ -182,6 +204,7 @@ class ArController(context: Context, private val tuning: ScanTuning = ScanTuning
     override fun onSurfaceCreated(gl: GL10?, eglConfig: EGLConfig?) {
         GLES20.glClearColor(0f, 0f, 0f, 1f)
         background.create()
+        captureGlReady = null // new GL context: the capture renderer must recreate its objects
     }
 
     override fun onSurfaceChanged(gl: GL10?, width: Int, height: Int) {
@@ -220,7 +243,9 @@ class ArController(context: Context, private val tuning: ScanTuning = ScanTuning
         runCommands(s, frame)
         gather(frame)
         logPoses(s, frame)
-        _frames.value = snapshot(s, frame)
+        val snap = snapshot(s, frame)
+        drawCapture(frame, snap)
+        _frames.value = snap
     }
 
     private fun runCommands(s: Session, frame: Frame) {
@@ -236,6 +261,17 @@ class ArController(context: Context, private val tuning: ScanTuning = ScanTuning
                 }
             }
         }
+    }
+
+    private fun drawCapture(frame: Frame, snap: ArFrameSnapshot) {
+        val c = capture ?: return
+        if (captureGlReady !== c) {
+            c.glCreate()
+            captureGlReady = c
+        }
+        val a = snap.anchor ?: return
+        if (frame.camera.trackingState == ArTrackingState.TRACKING) c.onFrame(frame, a, ::poseAt)
+        c.draw(snap.view, snap.projection, a)
     }
 
     private fun setFlash(s: Session, on: Boolean) {
@@ -464,6 +500,8 @@ class ArController(context: Context, private val tuning: ScanTuning = ScanTuning
             planes = if (showPlanes) planeOverlays(tables, camera) else emptyList(),
             reticle = if (showPlanes && tables.isNotEmpty()) reticle(frame) else null,
             anchor = anchor?.takeIf { it.trackingState == ArTrackingState.TRACKING }?.pose?.matrix(),
+            timestampNs = frame.timestamp,
+            lightIntensity = frame.lightEstimate.takeIf { it.state == com.google.ar.core.LightEstimate.State.VALID }?.pixelIntensity,
         )
     }
 

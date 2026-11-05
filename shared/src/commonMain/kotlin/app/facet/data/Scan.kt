@@ -45,6 +45,10 @@ interface ScanRepository {
     val scans: Flow<List<Scan>>
     fun scan(id: String): Flow<Scan?>
     suspend fun loadMesh(id: String): Mesh?
+    /** Saves a new scan and its mesh (box-frame mm, Z up, resting on Z = 0, centred on X/Y). */
+    suspend fun add(scan: Scan, mesh: Mesh)
+    /** "Scan_07": the next free default name. */
+    suspend fun nextScanName(): String
     suspend fun rename(id: String, name: String)
     suspend fun delete(id: String)
     /** Deletes every scan's keyframes; those scans can no longer be reprocessed. */

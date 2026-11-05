@@ -28,7 +28,7 @@ fun ArCameraView(controller: ArController, modifier: Modifier = Modifier) {
     val view = remember(controller) {
         GLSurfaceView(context).apply {
             preserveEGLContextOnPause = true
-            setEGLContextClientVersion(2)
+            setEGLContextClientVersion(3) // GLES 3 for the live mesh shader
             setEGLConfigChooser(8, 8, 8, 8, 16, 0)
             setRenderer(controller)
             renderMode = GLSurfaceView.RENDERMODE_CONTINUOUSLY

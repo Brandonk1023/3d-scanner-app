@@ -25,6 +25,7 @@ import app.facet.android.ui.stub.StubScreen
 import app.facet.android.ui.theme.FacetTheme
 import app.facet.android.ui.viewer.ViewerScreen
 import app.facet.data.ScanStatus
+import app.facet.scan.ResultMode
 import app.facet.platform.DeviceSupport
 import app.facet.settings.ThemeMode
 
@@ -121,9 +122,19 @@ fun FacetNavHost(
         }
 
         composable<Scan> {
-            // Camera / AR screens are always dark. Phase 2: placement; capture and finish follow in Phase 3.
+            // Camera / AR screens are always dark. Placement → capture → finish.
             FacetTheme(themeMode = ThemeMode.DARK) {
-                ScanScreen(onClose = { nav.popBackStack() })
+                ScanScreen(
+                    onClose = { nav.popBackStack() },
+                    onResult = { scanId, mode ->
+                        // TODO(Phase 7): High detail processing; Phase 4: real Quick result.
+                        if (mode == ResultMode.HIGH_DETAIL) {
+                            nav.navigate(Processing(scanId)) { popUpTo(Gallery) }
+                        } else {
+                            nav.navigate(Viewer(scanId)) { popUpTo(Gallery) }
+                        }
+                    },
+                )
             }
         }
 

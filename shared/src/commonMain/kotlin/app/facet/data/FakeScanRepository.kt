@@ -20,7 +20,8 @@ import kotlin.time.Duration.Companion.hours
  * clear-photos work until the app restarts. Replaced by the Room repository in Phase 5.
  */
 class FakeScanRepository(clock: Clock = Clock.System) : ScanRepository {
-    private class Entry(val scan: Scan, val shape: SampleShape)
+    /** A sample ([shape]) or a real scan made this session ([mesh]). */
+    private class Entry(val scan: Scan, val shape: SampleShape?, val mesh: Mesh? = null)
 
     private val meshes = HashMap<SampleShape, Mesh>()
     private fun meshFor(shape: SampleShape): Mesh = meshes.getOrPut(shape) { SampleMeshes.create(shape) }
@@ -60,14 +61,28 @@ class FakeScanRepository(clock: Clock = Clock.System) : ScanRepository {
     override fun scan(id: String): Flow<Scan?> = entries.map { list -> list.firstOrNull { it.scan.id == id }?.scan }
 
     override suspend fun loadMesh(id: String): Mesh? =
-        entries.value.firstOrNull { it.scan.id == id }?.let { meshFor(it.shape) }
+        entries.value.firstOrNull { it.scan.id == id }?.let { it.mesh ?: it.shape?.let(::meshFor) }
+
+    override suspend fun add(scan: Scan, mesh: Mesh) = entries.update { list ->
+        list.filterNot { it.scan.id == scan.id } + Entry(scan, shape = null, mesh = mesh)
+    }
+
+    override suspend fun nextScanName(): String {
+        val taken = entries.value.map { it.scan.name }.toSet()
+        var n = 1
+        while (true) {
+            val name = "Scan_" + n.toString().padStart(2, '0')
+            if (name !in taken) return name
+            n++
+        }
+    }
 
     override suspend fun rename(id: String, name: String) = edit(id) { it.copy(name = name) }
 
     override suspend fun delete(id: String) = entries.update { list -> list.filterNot { it.scan.id == id } }
 
     override suspend fun clearSavedPhotos() = entries.update { list ->
-        list.map { Entry(it.scan.copy(hasSavedPhotos = false, photoBytes = 0), it.shape) }
+        list.map { Entry(it.scan.copy(hasSavedPhotos = false, photoBytes = 0), it.shape, it.mesh) }
     }
 
     override val usage: Flow<StorageUsage> = entries.map { list ->
@@ -79,7 +94,7 @@ class FakeScanRepository(clock: Clock = Clock.System) : ScanRepository {
     }
 
     private fun edit(id: String, change: (Scan) -> Scan) = entries.update { list ->
-        list.map { if (it.scan.id == id) Entry(change(it.scan), it.shape) else it }
+        list.map { if (it.scan.id == id) Entry(change(it.scan), it.shape, it.mesh) else it }
     }
 
     private companion object {

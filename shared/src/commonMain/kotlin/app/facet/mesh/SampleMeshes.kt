@@ -181,3 +181,19 @@ internal class MeshBuilder {
         return Mesh(p, idx.toIntArray())
     }
 }
+
+/** The output convention (docs/04 §4): resting on Z = 0 and centred on X/Y. Empty meshes pass through. */
+fun Mesh.restingCentred(): Mesh {
+    if (vertexCount == 0) return this
+    val b = bounds()
+    val dx = b.center.x.toFloat()
+    val dy = b.center.y.toFloat()
+    val dz = b.min.z.toFloat()
+    val p = positions.copyOf()
+    for (i in 0 until vertexCount) {
+        p[3 * i] -= dx
+        p[3 * i + 1] -= dy
+        p[3 * i + 2] -= dz
+    }
+    return Mesh(p, indices)
+}

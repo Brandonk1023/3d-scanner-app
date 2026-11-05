@@ -40,6 +40,11 @@ android {
     buildFeatures {
         compose = true
     }
+
+    // MediaPipe memory-maps its model: keep it uncompressed in the APK.
+    androidResources {
+        noCompress += "tflite"
+    }
 }
 
 dependencies {
@@ -60,4 +65,7 @@ dependencies {
 
     // ARCore: installed/updated through the Play Store (ArCoreApk) — the app itself has no network access.
     implementation(libs.arcore)
+
+    // On-device object outlines for silhouette carving (model bundled in assets; no network).
+    implementation(libs.mediapipe.tasks.vision)
 }

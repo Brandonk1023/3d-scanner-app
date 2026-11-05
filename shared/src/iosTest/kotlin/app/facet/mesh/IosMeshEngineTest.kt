@@ -10,7 +10,7 @@ class IosMeshEngineTest {
 
     @Test
     fun coreVersionIsReachable() {
-        assertEquals("0.1.0", engine.coreVersion())
+        assertEquals("0.2.0", engine.coreVersion())
     }
 
     @Test
