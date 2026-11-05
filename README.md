@@ -7,15 +7,18 @@ v1 exports STL and 3MF.
 - Design handoff and specs: [`design/`](design/) (start with `design/docs/01-product-spec.md`)
 - Project structure: [`design/docs/07-multiplatform.md`](design/docs/07-multiplatform.md)
 
-**Status:** Phase 3 (capture, fusion and silhouette carving) is in progress. The native mesh
-pipeline (marching cubes → Manifold repair → meshoptimizer decimation → STL / 3MF, and the photo-mode
-Screened Poisson path) is built and tested, but not yet connected to the capture and export screens.
+**Status:** Phase 5 (export and gallery persistence) is done: scans are stored in Room with their
+meshes on disk, and Export writes real STL / 3MF files to Downloads/Facet or the share sheet. Phase 3
+(capture) still needs an on-device check of silhouette carving, and Phase 4 (cleanup of the final
+mesh) is next. Debug builds have Settings › Developer › Add sample scans for testing on the emulator.
 
 ## Layout
 
 | Path | What |
 |---|---|
 | `shared/` | Kotlin Multiplatform: scan logic, `ScanTuning`, `MeshEngine` / `ScanPipeline`, exporters, data, ViewModels, platform interfaces |
+| `shared/src/commonMain/.../data/` | Gallery: Room database (`db/`), `RoomScanRepository` (records in Room, each scan's meshes and keyframes in `files/scans/<id>/`), `MeshFiles` (the on-disk mesh format) |
+| `shared/schemas/` | Room's exported schema per database version (committed, for future migrations) |
 | `native/` | C++ reconstruction core with a plain C API (`include/facet_mesh.h`, `include/facet_pipeline.h`), no Android or Apple dependencies |
 | `native/src/` | TSDF fusion and silhouette carving (`tsdf.*`), C API, and `pipeline/` — one file per third-party library (Manifold, meshoptimizer, lib3mf, PoissonRecon) plus our STL writer and depth → point-cloud code |
 | `native/fusion/` | Marching cubes ported from Open3D (keeps Open3D's MIT notice and a "Modified" note) |
@@ -91,7 +94,7 @@ but no code was copied from it.
 | [MediaPipe](https://github.com/google-ai-edge/mediapipe) Tasks Vision 1.2.2 | Apache-2.0 | On-device object outlines for silhouette carving |
 | MediaPipe MagicTouch model (`magic_touch.tflite`) — Valentin Bazarevsky, Ben Hahn, Google | Apache-2.0 ([model card](https://storage.googleapis.com/mediapipe-assets/Model%20Card%20MagicTouch.pdf)) | Bundled, runs on device |
 | [oss-licenses-plugin](https://developers.google.com/android/guides/opensource) 0.13.0 / `play-services-oss-licenses` 17.5.3 | Apache-2.0 / [Android SDK License](https://developer.android.com/studio/terms) | The licences screen library and the `play-services-*` libraries it pulls in are not open source |
-| AndroidX, Jetpack Compose, Kotlin and kotlinx libraries, Okio and other Gradle dependencies | Mostly Apache-2.0, some MIT / BSD-3-Clause | Full list in the app (Settings › About › Open-source licences) |
+| AndroidX (incl. Room and its bundled SQLite), Jetpack Compose, Kotlin and kotlinx libraries, Okio and other Gradle dependencies | Mostly Apache-2.0, some MIT / BSD-3-Clause; SQLite is public domain | Full list in the app (Settings › About › Open-source licences) |
 | [Inter Tight](https://github.com/rsms/inter-tight) 3.004 — The Inter Project Authors | SIL OFL 1.1 | UI font |
 | [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) 2.211 — The JetBrains Mono Project Authors | SIL OFL 1.1 | Monospace data font |
 

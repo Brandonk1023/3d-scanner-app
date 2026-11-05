@@ -69,6 +69,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.facet.android.R
+import app.facet.android.AppContainer
 import app.facet.android.appContainer
 import app.facet.android.ar.ArController
 import app.facet.android.ar.ArEvent
@@ -147,7 +148,7 @@ fun ScanScreen(onClose: () -> Unit, onResult: (scanId: String, mode: ResultMode)
             captureFailed = true
             return@LaunchedEffect
         }
-        val dir = context.filesDir.resolve("scans/scan-${System.currentTimeMillis()}")
+        val dir = context.filesDir.resolve("${AppContainer.SCANS_DIR}/scan-${System.currentTimeMillis()}")
         val appContext = context.applicationContext
         val engine = CaptureEngine(volume, setup.box, dir, tuning, ar.depthFusedSink()) { MediaPipeSegmenter(appContext) }
         ar.startCapture(engine)

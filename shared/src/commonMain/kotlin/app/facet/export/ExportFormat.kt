@@ -12,8 +12,8 @@ enum class ExportFormat(val extension: String, val mimeType: String) {
 
     /**
      * File size for the export sheet. STL is exact (80-byte header + count + 50 bytes per triangle).
-     * 3MF is an estimate of the uncompressed model XML plus package overhead; replaced by the real
-     * writer's output size in Phase 5.
+     * 3MF is an estimate of the uncompressed model XML plus package overhead, shown until the export
+     * sheet has written the real file and measured it.
      */
     fun estimatedBytes(mesh: Mesh): Long = when (this) {
         STL -> 84L + 50L * mesh.triangleCount

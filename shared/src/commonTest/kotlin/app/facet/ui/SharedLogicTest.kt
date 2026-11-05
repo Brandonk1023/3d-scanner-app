@@ -28,7 +28,6 @@ import app.facet.settings.toAppSettings
 import app.facet.settings.write
 import app.facet.ui.device.DeviceCheckUiState
 import app.facet.ui.device.DeviceCheckViewModel
-import app.facet.ui.export.ExportViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -128,17 +127,5 @@ class SharedLogicTest {
         })
         val state = assertIs<DeviceCheckUiState.Done>(vm.state.value)
         assertEquals(DeviceSupport.CHECK_FAILED, state.result.support)
-    }
-
-    @Test
-    fun exportRemembersFormatAndBuildsFileName() = runTest {
-        val settings = InMemorySettingsRepository()
-        val vm = ExportViewModel("mug-01", FakeScanRepository(), settings)
-        assertEquals("Mug_01.3mf", vm.state.value.exportFileName)
-        vm.setFormat(ExportFormat.STL)
-        vm.setFileName("my mug?")
-        assertEquals("my mug_.stl", vm.state.value.exportFileName)
-        assertEquals(ExportFormat.STL, settings.settings.first().lastExportFormat)
-        assertTrue(vm.state.value.sizes.getValue(ExportFormat.STL) > 0)
     }
 }

@@ -63,7 +63,11 @@ import app.facet.android.ui.theme.Facet
 import app.facet.android.ui.theme.FacetTypography
 import app.facet.android.ui.theme.facetColorScheme
 import app.facet.android.ui.theme.Space
+import android.content.pm.ApplicationInfo
+import androidx.compose.runtime.rememberCoroutineScope
+import app.facet.data.addSampleScans
 import app.facet.format.formatBytes
+import kotlinx.coroutines.launch
 import app.facet.mesh.Smoothing
 import app.facet.settings.DefaultResult
 import app.facet.settings.LengthUnit
@@ -213,6 +217,22 @@ fun SettingsScreen(onBack: () -> Unit, onNativeLibraries: () -> Unit) {
                     NavRow(stringResource(R.string.about_privacy), null, { dialog = SettingsDialog.PRIVACY })
                 }
                 AboutFootnotes()
+            }
+
+            // Debug builds only: the emulator can't scan, so this fills the gallery for testing.
+            val context = LocalContext.current
+            val debuggable = remember { context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0 }
+            if (debuggable) {
+                val scope = rememberCoroutineScope()
+                Section(R.string.settings_developer) {
+                    ListGroup {
+                        NavRow(
+                            stringResource(R.string.dev_add_samples),
+                            stringResource(R.string.dev_add_samples_sub),
+                            { scope.launch { container.scans.addSampleScans() } },
+                        )
+                    }
+                }
             }
         }
     }

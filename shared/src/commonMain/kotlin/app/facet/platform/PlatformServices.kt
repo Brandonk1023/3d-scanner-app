@@ -65,12 +65,29 @@ data class StorageUsage(val scanCount: Int, val modelBytes: Long, val savedPhoto
     val totalBytes: Long get() = modelBytes + savedPhotoBytes
 }
 
-/** Export to user-visible storage (Android: MediaStore Downloads/Facet; iOS: Files) or the share sheet. */
+/**
+ * Export to user-visible storage (Android: MediaStore Downloads/Facet; iOS: Files) or the share
+ * sheet. [sourcePath] is a finished file in the app's cache; [fileName] is what the user sees.
+ */
 interface FileExporter {
-    /** Saves [bytes] as [fileName] and returns a user-readable location, e.g. "Downloads/Facet/Mug_01.3mf". */
-    suspend fun save(fileName: String, mimeType: String, bytes: ByteArray): String
-    suspend fun share(fileName: String, mimeType: String, bytes: ByteArray)
+    /** Copies the file out. The saved name can differ from [fileName] if that name was taken. */
+    suspend fun save(sourcePath: String, fileName: String, mimeType: String): SavedFile
+
+    /** Opens the system share sheet for the file. */
+    fun share(sourcePath: String, fileName: String, mimeType: String)
+
+    /** Opens a saved file in another app (snackbar "Open"); false when no app can open it. */
+    fun open(file: SavedFile): Boolean
 }
+
+/** A file saved by [FileExporter.save]. */
+data class SavedFile(
+    /** User-readable location, e.g. "Downloads/Facet/Mug_01.3mf". */
+    val location: String,
+    /** Platform handle used by [FileExporter.open] (Android: content URI). */
+    val uri: String,
+    val mimeType: String,
+)
 
 /** High detail processing that survives leaving the app (WorkManager / BGProcessingTask). */
 interface BackgroundProcessor {

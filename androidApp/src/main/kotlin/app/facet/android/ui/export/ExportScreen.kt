@@ -1,5 +1,10 @@
 package app.facet.android.ui.export
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -21,10 +26,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -36,16 +43,19 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.core.content.ContextCompat
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.facet.android.R
 import app.facet.android.appContainer
+import app.facet.android.ui.components.FacetSnackbarHost
 import app.facet.android.ui.components.FacetTopBar
 import app.facet.android.ui.components.OutlineButton
 import app.facet.android.ui.components.PrimaryButton
@@ -57,23 +67,70 @@ import app.facet.android.ui.theme.Space
 import app.facet.data.ResultQuality
 import app.facet.export.ExportFormat
 import app.facet.format.formatBytes
+import app.facet.ui.export.ExportAction
+import app.facet.ui.export.ExportEvent
 import app.facet.ui.export.ExportViewModel
 import kotlinx.coroutines.launch
 
-/** Export.png — UI only in Phase 1; Save and Share write real files in Phase 5. */
+/** Export.png: Save → Downloads/Facet (snackbar with Open), Share → the system share sheet. */
 @Composable
 fun ExportScreen(scanId: String, onBack: () -> Unit) {
     val container = appContainer()
-    val vm: ExportViewModel = viewModel(key = scanId) { ExportViewModel(scanId, container.scans, container.settings) }
+    val vm: ExportViewModel = viewModel(key = scanId) {
+        ExportViewModel(
+            scanId, container.scans, container.settings, container.exportWriter, container.fileExporter,
+            okio.FileSystem.SYSTEM, container.exportDir,
+        )
+    }
     val state by vm.state.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
+
+    val res = context.resources
+
+    // Consume first, then show from the screen's scope: the snackbar outlives the state change.
+    // A new result replaces the one on screen instead of queueing behind it.
+    LaunchedEffect(state.event) {
+        val event = state.event ?: return@LaunchedEffect
+        vm.consumeEvent()
+        snackbar.currentSnackbarData?.dismiss()
+        scope.launch {
+            when (event) {
+                is ExportEvent.Saved -> {
+                    val result = snackbar.showSnackbar(
+                        res.getString(R.string.saved_to, event.file.location),
+                        actionLabel = res.getString(R.string.open),
+                        withDismissAction = true,
+                        duration = SnackbarDuration.Long,
+                    )
+                    if (result == SnackbarResult.ActionPerformed && !vm.openSaved(event.file)) {
+                        snackbar.showSnackbar(res.getString(R.string.export_no_app, event.file.location.substringAfterLast('.')))
+                    }
+                }
+                is ExportEvent.Failed -> snackbar.showSnackbar(
+                    res.getString(if (event.action == ExportAction.SAVE) R.string.export_save_failed else R.string.export_share_failed),
+                )
+            }
+        }
+    }
+
+    // Android 8–9 write to the public Downloads folder, which needs the storage permission.
+    val storagePermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) vm.save() else scope.launch { snackbar.showSnackbar(res.getString(R.string.export_storage_denied)) }
+    }
+    fun save() {
+        val needsPermission = Build.VERSION.SDK_INT < Build.VERSION_CODES.Q &&
+            ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+        if (needsPermission) storagePermission.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE) else vm.save()
+    }
+
     val scan = state.scan ?: return
-    val later = stringResource(R.string.stub_export_later)
+    val ready = state.mesh != null && state.busy == null
 
     Scaffold(
         containerColor = Facet.colors.bg,
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { FacetSnackbarHost(snackbar) },
         topBar = {
             FacetTopBar(
                 stringResource(R.string.export_title),
@@ -125,16 +182,18 @@ fun ExportScreen(scanId: String, onBack: () -> Unit) {
                 Spacer(Modifier.height(Space.xs))
                 Row(horizontalArrangement = Arrangement.spacedBy(Space.s)) {
                     OutlineButton(
-                        stringResource(R.string.save),
-                        onClick = { scope.launch { snackbar.showSnackbar(later) } },
+                        stringResource(if (state.busy == ExportAction.SAVE) R.string.export_saving else R.string.save),
+                        onClick = ::save,
                         icon = R.drawable.ic_download,
                         modifier = Modifier.weight(1f),
+                        enabled = ready,
                     )
                     PrimaryButton(
-                        stringResource(R.string.share),
-                        onClick = { scope.launch { snackbar.showSnackbar(later) } },
+                        stringResource(if (state.busy == ExportAction.SHARE) R.string.export_preparing else R.string.share),
+                        onClick = vm::share,
                         icon = R.drawable.ic_share,
                         modifier = Modifier.weight(1f),
+                        enabled = ready,
                     )
                 }
             }

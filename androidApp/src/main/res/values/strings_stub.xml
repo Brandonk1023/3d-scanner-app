@@ -4,5 +4,9 @@
     <string name="stub_note" translatable="false">Stub screen · reference: %1$s</string>
     <string name="stub_processing_title" translatable="false">Processing · %1$s</string>
     <string name="stub_processing_done" translatable="false">Simulate: processing done</string>
-    <string name="stub_export_later" translatable="false">Saving and sharing files arrives in Phase 5.</string>
+
+    <!-- Settings › Developer (debug builds only) -->
+    <string name="settings_developer" translatable="false">Developer</string>
+    <string name="dev_add_samples" translatable="false">Add sample scans</string>
+    <string name="dev_add_samples_sub" translatable="false">5 scans</string>
 </resources>

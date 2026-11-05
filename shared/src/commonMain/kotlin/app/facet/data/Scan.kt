@@ -11,7 +11,7 @@ enum class ResultQuality { QUICK, HIGH_DETAIL }
 /** What the gallery chip and filters show. Exactly one per scan. */
 enum class ScanStatus { QUICK, HIGH_DETAIL, PROCESSING }
 
-/** A saved scan (Room-backed from Phase 5; Phase 1 uses [FakeScanRepository]). */
+/** A saved scan ([RoomScanRepository] in the app; [FakeScanRepository] in tests and previews). */
 data class Scan(
     val id: String,
     val name: String,
@@ -45,6 +45,8 @@ interface ScanRepository {
     val scans: Flow<List<Scan>>
     fun scan(id: String): Flow<Scan?>
     suspend fun loadMesh(id: String): Mesh?
+    /** A reduced copy of the mesh for gallery cards; falls back to the full mesh. */
+    suspend fun loadThumbnail(id: String): Mesh?
     /** Saves a new scan and its mesh (box-frame mm, Z up, resting on Z = 0, centred on X/Y). */
     suspend fun add(scan: Scan, mesh: Mesh)
     /** "Scan_07": the next free default name. */

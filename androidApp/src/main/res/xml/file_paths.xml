@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FileProvider (Share, and Open on Android 8–9): only the export scratch folder and Downloads/Facet. -->
+<paths>
+    <cache-path name="exports" path="exports/" />
+    <external-path name="downloads" path="Download/Facet/" />
+</paths>

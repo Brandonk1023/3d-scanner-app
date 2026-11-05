@@ -1,0 +1,101 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 1,
+    "identityHash": "4284bf91a32dbb79aa67edd9bd30cbe1",
+    "entities": [
+      {
+        "tableName": "scans",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `createdAtMs` INTEGER NOT NULL, `quality` TEXT NOT NULL, `processingPercent` INTEGER, `widthMm` REAL NOT NULL, `depthMm` REAL NOT NULL, `heightMm` REAL NOT NULL, `triangleCount` INTEGER NOT NULL, `scaleReference` TEXT, `hasSavedPhotos` INTEGER NOT NULL, `modelBytes` INTEGER NOT NULL, `photoBytes` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "createdAtMs",
+            "columnName": "createdAtMs",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "quality",
+            "columnName": "quality",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "processingPercent",
+            "columnName": "processingPercent",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "widthMm",
+            "columnName": "widthMm",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "depthMm",
+            "columnName": "depthMm",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "heightMm",
+            "columnName": "heightMm",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "triangleCount",
+            "columnName": "triangleCount",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "scaleReference",
+            "columnName": "scaleReference",
+            "affinity": "TEXT"
+          },
+          {
+            "fieldPath": "hasSavedPhotos",
+            "columnName": "hasSavedPhotos",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "modelBytes",
+            "columnName": "modelBytes",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "photoBytes",
+            "columnName": "photoBytes",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "id"
+          ]
+        }
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4284bf91a32dbb79aa67edd9bd30cbe1')"
+    ]
+  }
+}

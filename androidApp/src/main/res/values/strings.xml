@@ -337,6 +337,12 @@
     <string name="cd_file_size">File size about %1$s</string>
     <string name="saved_to">Saved to %1$s</string>
     <string name="open">Open</string>
+    <string name="export_saving">Saving…</string>
+    <string name="export_preparing">Preparing…</string>
+    <string name="export_save_failed">Couldn\'t save the file. Check that the phone has free space, then try again.</string>
+    <string name="export_share_failed">Couldn\'t prepare the file to share. Try again.</string>
+    <string name="export_no_app">No app on this phone can open .%1$s files. Use Share to send it to your slicer.</string>
+    <string name="export_storage_denied">Saving to Downloads needs storage access.</string>
 
     <!-- Low storage -->
     <string name="low_storage_title">Not enough space for High detail</string>

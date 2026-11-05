@@ -80,8 +80,8 @@ class GalleryViewModel(
         viewModelScope.launch { repository.delete(id) }
     }
 
-    /** Thumbnail mesh (Phase 5 replaces this with a rendered thumbnail file). */
-    suspend fun mesh(id: String): Mesh? = repository.loadMesh(id)
+    /** Reduced mesh for the card thumbnail. */
+    suspend fun mesh(id: String): Mesh? = repository.loadThumbnail(id)
 }
 
 fun List<Scan>.filtered(query: String, filter: GalleryFilter): List<Scan> {

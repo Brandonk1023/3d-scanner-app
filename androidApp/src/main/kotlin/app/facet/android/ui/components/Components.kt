@@ -1,5 +1,6 @@
 package app.facet.android.ui.components
 
+import app.facet.android.ui.theme.LightFacetColors
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -32,6 +33,9 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -119,9 +123,11 @@ fun OutlineButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     @DrawableRes icon: Int? = null,
+    enabled: Boolean = true,
 ) {
     OutlinedButton(
         onClick = onClick,
+        enabled = enabled,
         modifier = modifier.heightIn(min = Sizes.button),
         border = BorderStroke(1.dp, Facet.colors.textMuted),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = Facet.colors.text),
@@ -466,5 +472,24 @@ fun <T> ChoiceList(options: List<Pair<T, String>>, selected: T, onSelect: (T) ->
                 Text(label, style = MaterialTheme.typography.bodyLarge, color = Facet.colors.text)
             }
         }
+    }
+}
+
+/**
+ * Snackbars in the app's colours: inverted surface (dark on light, light on dark) with the accent
+ * for the action. Lime only reads on the dark container, so the light container uses the olive ink.
+ */
+@Composable
+fun FacetSnackbarHost(state: SnackbarHostState, modifier: Modifier = Modifier) {
+    val c = Facet.colors
+    SnackbarHost(state, modifier) { data ->
+        Snackbar(
+            data,
+            shape = RoundedCornerShape(Radius.card),
+            containerColor = c.text,
+            contentColor = c.bg,
+            actionColor = if (c.isDark) LightFacetColors.accentInk else c.accent,
+            dismissActionContentColor = c.bg,
+        )
     }
 }

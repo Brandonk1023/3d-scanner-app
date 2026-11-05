@@ -5,9 +5,14 @@ plugins {
     alias(libs.plugins.kotlin.multiplatform)
     alias(libs.plugins.android.kmp.library)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
 }
 
 kotlin {
+    // Room's generated FacetDatabaseConstructor is an expect/actual object.
+    compilerOptions { freeCompilerArgs.add("-Xexpect-actual-classes") }
+
     android {
         namespace = "app.facet.shared"
         compileSdk = libs.versions.compileSdk.get().toInt()
@@ -35,10 +40,14 @@ kotlin {
             implementation(libs.okio)
             api(libs.androidx.lifecycle.viewmodel)
             api(libs.androidx.datastore.preferences.core)
+            // Gallery: scan records in Room (KMP) on the bundled SQLite, so Android and iOS behave the same.
+            api(libs.androidx.room.runtime)
+            implementation(libs.androidx.sqlite.bundled)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
             implementation(libs.kotlinx.coroutines.test)
+            implementation(libs.okio.fakefilesystem)
         }
         androidMain.dependencies {
             implementation(project(":nativeAndroid"))
@@ -47,6 +56,16 @@ kotlin {
             implementation(libs.junit)
         }
     }
+}
+
+// Room's generated code (DAO implementations, FacetDatabaseConstructor) for every target.
+dependencies {
+    listOf("kspAndroid", "kspIosArm64", "kspIosSimulatorArm64").forEach { add(it, libs.androidx.room.compiler) }
+}
+
+// Exported schemas are committed so future versions can write and test migrations.
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 // ---------------------------------------------------------------------------------------------
