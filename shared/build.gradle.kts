@@ -76,11 +76,13 @@ fun configureFacetCoreInterop(target: KotlinNativeTarget) {
 
     val buildTask = tasks.register<Exec>("buildFacetCore$suffix") {
         group = "native"
-        description = "Builds libfacet_core.a for ${target.name}"
+        description = "Builds libfacet_core_all.a (core + pinned third-party libraries) for ${target.name}"
         inputs.dir(nativeDir.dir("src"))
         inputs.dir(nativeDir.dir("include"))
+        inputs.dir(nativeDir.dir("fusion"))
+        inputs.dir(nativeDir.dir("cmake"))
         inputs.file(nativeDir.file("CMakeLists.txt"))
-        outputs.file(outDir.map { it.file("libfacet_core.a") })
+        outputs.file(outDir.map { it.file("libfacet_core_all.a") })
         // Xcode build phases export SDK/arch variables that would confuse a nested CMake build.
         listOf("SDKROOT", "ARCHS", "PLATFORM_NAME", "IPHONEOS_DEPLOYMENT_TARGET", "CC", "CXX", "LD")
             .forEach { environment.remove(it) }
@@ -94,7 +96,7 @@ fun configureFacetCoreInterop(target: KotlinNativeTarget) {
                 "-DCMAKE_SYSTEM_NAME=iOS -DCMAKE_OSX_SYSROOT=$sysroot -DCMAKE_OSX_ARCHITECTURES=arm64",
                 "-DCMAKE_OSX_DEPLOYMENT_TARGET=16.0 -DCMAKE_BUILD_TYPE=Release -DFACET_BUILD_TESTS=OFF",
                 "-DCMAKE_ARCHIVE_OUTPUT_DIRECTORY='$out' > /dev/null",
-                "&& '$cmake' --build '$out' --target facet_core",
+                "&& '$cmake' --build '$out' --target facet_core_bundle",
             ).joinToString(" "),
         )
     }

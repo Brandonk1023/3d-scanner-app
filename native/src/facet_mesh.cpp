@@ -1,6 +1,6 @@
 #include "facet_mesh.h"
 
-#include "tsdf.h"
+#include "facet_volume_impl.h"
 
 #include <new>
 #include <vector>
@@ -9,7 +9,7 @@
 
 namespace facet {
 
-constexpr const char *kVersion = "0.2.0";
+constexpr const char *kVersion = "0.3.0";
 
 double boxDiagonal(double w, double d, double h) {
     if (w < 0.0 || d < 0.0 || h < 0.0) return -1.0;
@@ -25,12 +25,6 @@ const char *facet_core_version(void) { return facet::kVersion; }
 double facet_box_diagonal(double width, double depth, double height) {
     return facet::boxDiagonal(width, depth, height);
 }
-
-struct facet_volume {
-    facet::TsdfVolume *tsdf;
-    std::vector<float> positions;
-    std::vector<int32_t> indices;
-};
 
 facet_volume *facet_volume_create(float width, float depth, float height, float voxel, float truncation) {
     if (!(width > 0 && depth > 0 && height > 0 && voxel > 0 && truncation > 0)) return nullptr;

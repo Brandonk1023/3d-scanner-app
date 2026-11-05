@@ -1,5 +1,7 @@
 package app.facet.android.ui.settings
 
+import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -35,6 +37,12 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.TextLinkStyles
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -52,6 +60,8 @@ import app.facet.android.ui.components.SectionLabel
 import app.facet.android.ui.components.SegmentedControl
 import app.facet.android.ui.components.SwitchRow
 import app.facet.android.ui.theme.Facet
+import app.facet.android.ui.theme.FacetTypography
+import app.facet.android.ui.theme.facetColorScheme
 import app.facet.android.ui.theme.Space
 import app.facet.format.formatBytes
 import app.facet.mesh.Smoothing
@@ -59,12 +69,13 @@ import app.facet.settings.DefaultResult
 import app.facet.settings.LengthUnit
 import app.facet.settings.ThemeMode
 import app.facet.ui.settings.SettingsViewModel
+import com.google.android.gms.oss.licenses.v2.OssLicensesMenuActivity
 
-private enum class SettingsDialog { APPEARANCE, UNITS, DEFAULT_RESULT, CLEAR_PHOTOS, LICENCES, PRIVACY }
+private enum class SettingsDialog { APPEARANCE, UNITS, DEFAULT_RESULT, CLEAR_PHOTOS, PRIVACY }
 
 /** Settings.png */
 @Composable
-fun SettingsScreen(onBack: () -> Unit) {
+fun SettingsScreen(onBack: () -> Unit, onNativeLibraries: () -> Unit) {
     val container = appContainer()
     val vm: SettingsViewModel = viewModel { SettingsViewModel(container.settings, container.scans, container.storage) }
     val state by vm.state.collectAsStateWithLifecycle()
@@ -194,10 +205,14 @@ fun SettingsScreen(onBack: () -> Unit) {
                         Text(stringResource(R.string.about_version_value, version.first, version.second), style = Facet.type.dataMono, color = Facet.colors.textMuted)
                     }
                     ListDivider()
-                    NavRow(stringResource(R.string.about_licences), null, { dialog = SettingsDialog.LICENCES })
+                    val licencesTitle = stringResource(R.string.about_licences)
+                    NavRow(licencesTitle, null, { openOssLicences(context, licencesTitle, s.themeMode) })
+                    ListDivider()
+                    NavRow(stringResource(R.string.about_native_libraries), null, onNativeLibraries)
                     ListDivider()
                     NavRow(stringResource(R.string.about_privacy), null, { dialog = SettingsDialog.PRIVACY })
                 }
+                AboutFootnotes()
             }
         }
     }
@@ -222,7 +237,6 @@ fun SettingsScreen(onBack: () -> Unit) {
             onConfirm = vm::clearSavedPhotos,
             onDismiss = { dialog = null },
         )
-        SettingsDialog.LICENCES -> LicencesDialog { dialog = null }
         SettingsDialog.PRIVACY -> InfoDialog(
             stringResource(R.string.about_privacy),
             body = {
@@ -275,30 +289,35 @@ private fun Legend(color: Color, text: String) {
     }
 }
 
+/**
+ * Google's open-source licences screen (Gradle dependencies, collected by the oss-licenses plugin),
+ * in the app's colours. Follows the app's Appearance setting rather than only the system's.
+ */
+private fun openOssLicences(context: Context, title: String, themeMode: ThemeMode) {
+    val light = facetColorScheme(dark = themeMode == ThemeMode.DARK)
+    val dark = facetColorScheme(dark = themeMode != ThemeMode.LIGHT)
+    OssLicensesMenuActivity.setTheme(light, dark, FacetTypography)
+    OssLicensesMenuActivity.setActivityTitle(title)
+    context.startActivity(Intent(context, OssLicensesMenuActivity::class.java))
+}
+
+/** Required ARCore disclosure (Google APIs Terms of Service) and third-party credits, under About. */
 @Composable
-private fun LicencesDialog(onDismiss: () -> Unit) {
-    val context = LocalContext.current
-    val text = remember {
-        listOf(
-            "Inter Tight" to "licenses/inter_tight_OFL.txt",
-            "JetBrains Mono" to "licenses/jetbrains_mono_OFL.txt",
-            "MediaPipe" to "licenses/mediapipe_APACHE-2.0.txt",
-        )
-            .joinToString("\n\n") { (name, path) ->
-                val body = runCatching { context.assets.open(path).bufferedReader().use { it.readText() } }.getOrDefault("")
-                "$name\n\n$body"
-            }
+private fun AboutFootnotes() {
+    val full = stringResource(R.string.about_arcore_disclosure)
+    val link = stringResource(R.string.about_arcore_policy_link)
+    val url = stringResource(R.string.about_arcore_policy_url)
+    val linkStyle = SpanStyle(color = Facet.colors.accentInk, fontWeight = FontWeight.Bold, textDecoration = TextDecoration.Underline)
+    val disclosure = buildAnnotatedString {
+        append(full)
+        val start = full.indexOf(link)
+        if (start >= 0) addLink(LinkAnnotation.Url(url, TextLinkStyles(style = linkStyle)), start, start + link.length)
     }
-    InfoDialog(
-        stringResource(R.string.about_licences),
-        body = {
-            Text(
-                text,
-                style = MaterialTheme.typography.bodySmall,
-                color = Facet.colors.textMuted,
-                modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()),
-            )
-        },
-        onDismiss = onDismiss,
-    )
+    Column(
+        Modifier.padding(horizontal = Space.xxs, vertical = Space.xs),
+        verticalArrangement = Arrangement.spacedBy(Space.xs),
+    ) {
+        Text(disclosure, style = MaterialTheme.typography.bodySmall, color = Facet.colors.textMuted)
+        Text(stringResource(R.string.about_credit_meshoptimizer), style = MaterialTheme.typography.bodySmall, color = Facet.colors.textMuted)
+    }
 }

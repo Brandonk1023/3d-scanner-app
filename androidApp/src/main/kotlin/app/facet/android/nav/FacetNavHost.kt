@@ -19,6 +19,7 @@ import app.facet.android.ui.onboarding.OnboardingScreen
 import app.facet.android.ui.permission.CameraPermissionScreen
 import app.facet.android.ui.permission.hasCameraPermission
 import app.facet.android.ui.scan.ScanScreen
+import app.facet.android.ui.settings.NativeLibrariesScreen
 import app.facet.android.ui.settings.SettingsScreen
 import app.facet.android.ui.stub.StubLink
 import app.facet.android.ui.stub.StubScreen
@@ -118,7 +119,11 @@ fun FacetNavHost(
         }
 
         composable<Settings> {
-            SettingsScreen(onBack = { nav.popBackStack() })
+            SettingsScreen(onBack = { nav.popBackStack() }, onNativeLibraries = { nav.navigate(NativeLibraries) })
+        }
+
+        composable<NativeLibraries> {
+            NativeLibrariesScreen(onBack = { nav.popBackStack() })
         }
 
         composable<Scan> {

@@ -1,5 +1,7 @@
 #include "tsdf.h"
 
+#include "../fusion/marching_cubes.h"
+
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
@@ -193,6 +195,21 @@ void TsdfVolume::extract(int step, float minWeight, std::vector<float> &position
         out[2] = (c * step + 0.5f) * voxel_;
     };
     surfaceNets(sx, sy, sz, sample, pos, positions, indices);
+}
+
+void TsdfVolume::extractMarchingCubes(float minWeight, std::vector<float> &positions,
+                                      std::vector<int32_t> &indices) const {
+    fusion::TsdfGrid grid;
+    grid.nx = nx_;
+    grid.ny = ny_;
+    grid.nz = nz_;
+    grid.voxel = voxel_;
+    grid.origin[0] = -width_ / 2;
+    grid.origin[1] = -depth_ / 2;
+    grid.origin[2] = 0.f;
+    grid.tsdf = tsdf_.data();
+    grid.weight = weight_.data();
+    fusion::extractTriangleMesh(grid, minWeight, positions, indices);
 }
 
 void TsdfVolume::carve(const uint8_t *mask, int width, int height, float fx, float fy, float cx, float cy,

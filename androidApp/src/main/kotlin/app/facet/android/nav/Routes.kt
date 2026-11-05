@@ -19,6 +19,9 @@ import kotlinx.serialization.Serializable
 /** `settings` */
 @Serializable data object Settings
 
+/** `settings/native-libraries` — licenses of the C++ core's libraries, fonts and models. */
+@Serializable data object NativeLibraries
+
 /** `scan` — placement → capture → finish, one route driven by the shared ScanSession state machine. */
 @Serializable data object Scan
 

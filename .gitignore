@@ -1,5 +1,6 @@
 # --- Dev-only notes (never pushed) ---
 DEV_TODO.md
+LICENSE_CHECKLIST.md
 
 # --- OS / editors ---
 .DS_Store
@@ -33,6 +34,7 @@ google-services.json
 
 # --- Native (CMake) ---
 native/build*/
+native/.deps/
 cmake-build-*/
 
 # --- Xcode / iOS ---

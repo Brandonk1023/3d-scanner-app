@@ -68,6 +68,12 @@ fun FacetTheme(
     }
 }
 
+/**
+ * The app's Material 3 colour scheme outside [FacetTheme], e.g. for Google's open-source licences
+ * activity (OssLicensesMenuActivity.setTheme).
+ */
+fun facetColorScheme(dark: Boolean): ColorScheme = (if (dark) DarkFacetColors else LightFacetColors).toMaterial()
+
 /** Whether [themeMode] resolves to dark right now. */
 @Composable
 fun isDarkTheme(themeMode: ThemeMode): Boolean = when (themeMode) {

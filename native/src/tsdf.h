@@ -52,6 +52,12 @@ public:
     void extract(int step, float minWeight, std::vector<float> &positions, std::vector<int32_t> &indices) const;
 
     /**
+     * Full-resolution marching cubes (ported from Open3D, native/fusion/) of the zero crossing.
+     * Same frame and minWeight rule as extract(); used for the final Live-mode mesh.
+     */
+    void extractMarchingCubes(float minWeight, std::vector<float> &positions, std::vector<int32_t> &indices) const;
+
+    /**
      * Silhouette carving: one object mask (row-major, width × height, nonzero = object) seen with
      * the given intrinsics (image pixels) and camera pose (same convention as integrate). Each
      * voxel counts the views that saw it and the views that put it outside the object.

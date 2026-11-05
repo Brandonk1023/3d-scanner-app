@@ -31,6 +31,8 @@ test-native:
 	"$(CMAKE_BIN)/cmake" -S native -B native/build-host -G Ninja -DCMAKE_MAKE_PROGRAM="$(CMAKE_BIN)/ninja" -DCMAKE_BUILD_TYPE=Debug
 	"$(CMAKE_BIN)/cmake" --build native/build-host
 	cd native/build-host && "$(CMAKE_BIN)/ctest" --output-on-failure
+	@# New copyright/license notices in compiled third-party code must be credited (see the script).
+	NINJA="$(CMAKE_BIN)/ninja" python3 -I native/scripts/scan_notices.py native/build-host
 
 xcodeproj:
 	cd iosApp && xcodegen generate --quiet

@@ -1,0 +1,91 @@
+# Reviewed notices in compiled third-party files (native/scripts/scan_notices.py).
+# Every holder here is credited in androidApp/src/main/assets/licenses/.
+lib3mf	Copyright (C) 1995-2003, 2010 Mark Adler
+lib3mf	Copyright (C) 1995-2003, 2010, 2014, 2016 Jean-loup Gailly, Mark Adler
+lib3mf	Copyright (C) 1995-2005, 2010 Mark Adler
+lib3mf	Copyright (C) 1995-2005, 2014, 2016 Jean-loup Gailly, Mark Adler
+lib3mf	Copyright (C) 1995-2011, 2016 Mark Adler
+lib3mf	Copyright (C) 1995-2017 Jean-loup Gailly
+lib3mf	Copyright (C) 1995-2017 Mark Adler
+lib3mf	Copyright (C) 1995-2019 Mark Adler
+lib3mf	Copyright (C) 1995-2022 Mark Adler
+lib3mf	Copyright (C) 1995-2024 Jean-loup Gailly
+lib3mf	Copyright (C) 1995-2024 Jean-loup Gailly and Mark Adler
+lib3mf	Copyright (C) 1995-2024 Jean-loup Gailly, Mark Adler
+lib3mf	Copyright (C) 1995-2024 Mark Adler
+lib3mf	Copyright (C) 1999-2020 Dieter Baron and Thomas Klausner
+lib3mf	Copyright (C) 1999-2021 Dieter Baron and Thomas Klausner
+lib3mf	Copyright (C) 1999-2022 Dieter Baron and Thomas Klausner
+lib3mf	Copyright (C) 2004, 2010 Mark Adler
+lib3mf	Copyright (C) 2004-2017 Mark Adler
+lib3mf	Copyright (C) 2004-2017, 2020, 2021 René Nyffenegger
+lib3mf	Copyright (C) 2004-2019 Mark Adler
+lib3mf	Copyright (C) 2004-2024 Mark Adler
+lib3mf	Copyright (C) 2006-2021 Dieter Baron and Thomas Klausner
+lib3mf	Copyright (C) 2008-2021 Dieter Baron and Thomas Klausner
+lib3mf	Copyright (C) 2009-2020 Dieter Baron and Thomas Klausner
+lib3mf	Copyright (C) 2009-2021 Dieter Baron and Thomas Klausner
+lib3mf	Copyright (C) 2011-2021 Dieter Baron and Thomas Klausner
+lib3mf	Copyright (C) 2012-2021 Dieter Baron and Thomas Klausner
+lib3mf	Copyright (C) 2013-2021 Dieter Baron and Thomas Klausner
+lib3mf	Copyright (C) 2014-2021 Dieter Baron and Thomas Klausner
+lib3mf	Copyright (C) 2014-2022 Dieter Baron and Thomas Klausner
+lib3mf	Copyright (C) 2015-2021 Dieter Baron and Thomas Klausner
+lib3mf	Copyright (C) 2016-2021 Dieter Baron and Thomas Klausner
+lib3mf	Copyright (C) 2017-2020 Dieter Baron and Thomas Klausner
+lib3mf	Copyright (C) 2017-2021 Dieter Baron and Thomas Klausner
+lib3mf	Copyright (C) 2018 3MF Consortium
+lib3mf	Copyright (C) 2019 3MF Consortium
+lib3mf	Copyright (C) 2019 3MF Consortium (Original Author)
+lib3mf	Copyright (C) 2019-2021 Dieter Baron and Thomas Klausner
+lib3mf	Copyright (C) 2020 3MF Consortium
+lib3mf	Copyright (C) 2020 3MF Consortium (Original Author)
+lib3mf	Copyright (C) 2020 Dieter Baron and Thomas Klausner
+lib3mf	Copyright (C) 2020-2022 Dieter Baron and Thomas Klausner
+lib3mf	Copyright (C) 2022 Dieter Baron and Thomas Klausner
+lib3mf	Copyright (C) 2023 3MF Consortium
+lib3mf	Copyright (C) 2023 3MF Consortium (Original Author)
+lib3mf	Copyright (C) 2024 3MF Consortium
+lib3mf	Copyright (C) 2024 3MF Consortium (Original Author)
+lib3mf	If buffer is non-NULL, data is taken from there; otherwise data is read from fp as needed.
+lib3mf	deflate 1.3.1 Copyright 1995-2024 Jean-loup Gailly and Mark Adler
+lib3mf	inflate 1.3.1 Copyright 1995-2024 Mark Adler
+lib3mf	initially be taken from strm->next_in[0 .. strm->avail_in - 1].
+lib3mf	number of unused bits in the last byte taken from strm->next_in, plus 64 if
+lib3mf	products derived from this software without specific prior
+manifold	Adapted from FreeBSD msun implementations via musl libc sources:
+manifold	Based on linalg.h - 2.2 - Single-header public domain linear algebra library
+manifold	Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
+manifold	Copyright (c) 2015 Wenzel Jakob <wenzel@inf.ethz.ch>
+manifold	Copyright (c) 2019 wi-re
+manifold	Copyright 2020 The Manifold Authors, Jared Hoberock and Nathan Bell of
+manifold	Copyright 2020 The Manifold Authors.
+manifold	Copyright 2021 The Manifold Authors.
+manifold	Copyright 2022 The Manifold Authors.
+manifold	Copyright 2023 The Manifold Authors.
+manifold	Copyright 2024 The Manifold Authors.
+manifold	Copyright 2025 The Manifold Authors.
+manifold	Copyright 2026 The Manifold Authors.
+manifold	Derived from the public domain work of Antti Kuukka at
+manifold	Modified from https://github.com/wi-re/tbtSVD, removing CUDA dependence and
+manifold	from https://github.com/wjakob/dset, changed to add connected component
+meshoptimizer	Copyright (C) 2016-2026, by Arseny Kapoulkine (arseny.kapoulkine@gmail.com)
+meshoptimizer	Copyright (c) 2016-2026 Arseny Kapoulkine
+meshoptimizer	for each cube case, a triangulation is derived from the base cases via 90 degree rotations
+poissonrecon	Code from http://stackoverflow.com
+poissonrecon	Copyright (c) 2006, Michael Kazhdan and Matthew Bolitho
+poissonrecon	Copyright (c) 2007, Michael Kazhdan
+poissonrecon	Copyright (c) 2011, Michael Kazhdan and Ming Chuang
+poissonrecon	Copyright (c) 2016, Michael Kazhdan
+poissonrecon	Copyright (c) 2017, Michael Kazhdan
+poissonrecon	Copyright (c) 2019, Michael Kazhdan
+poissonrecon	Copyright (c) 2020, Georgia Institute of Technology
+poissonrecon	Copyright (c) 2020, Michael Kazhdan
+poissonrecon	Copyright (c) 2022, Michael Kazhdan
+poissonrecon	Copyright (c) 2022, Michael Kazhdan and Matthew Bolitho
+poissonrecon	Copyright (c) 2023, Michael Kazhdan
+poissonrecon	Copyright (c) 2024, Michael Kazhdan
+poissonrecon	Solution taken from: http://mathworld.wolfram.com/CubicFormula.html
+poissonrecon	Solution taken from: http://mathworld.wolfram.com/QuarticEquation.html
+poissonrecon	contributors may be used to endorse or promote products derived from this
+poissonrecon	may be used to endorse or promote products derived from this software without specific

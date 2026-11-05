@@ -6,7 +6,8 @@ import app.facet.geometry.BoxSize
  * The shared C++ reconstruction core (native/), behind one interface.
  * Android: JNI (`AndroidMeshEngine`). iOS: Kotlin/Native cinterop (`IosMeshEngine`).
  *
- * Phase 3: TSDF volumes for live fusion. Phase 4 adds the final mesh with [CleanupOptions].
+ * Phase 3: TSDF volumes for live fusion, plus the mesh pipeline stages ([ScanPipeline] chains them):
+ * Manifold repair, meshoptimizer decimation, STL / 3MF writers and Screened Poisson for photo mode.
  */
 interface MeshEngine {
     /** Version string of the C++ core. */
@@ -20,6 +21,27 @@ interface MeshEngine {
 
     /** Restores a volume written by [TsdfVolume.save]; null if missing or corrupt. */
     fun loadVolume(path: String): TsdfVolume?
+
+    /**
+     * Closed, oriented 2-manifold (Manifold) with the optional flat base / plinth booleans. On
+     * failure the result carries the status and the input mesh unchanged.
+     */
+    fun repair(mesh: Mesh, options: RepairOptions = RepairOptions()): MeshResult
+
+    /** Decimates to at most [targetTriangles] (meshoptimizer); [maxError] is relative to the mesh extent. */
+    fun decimate(mesh: Mesh, targetTriangles: Int, maxError: Float = 0.01f): MeshResult
+
+    /** Binary STL in millimetres. */
+    fun writeStl(mesh: Mesh, path: String): PipelineStatus
+
+    /** 3MF (lib3mf), unit = millimetre, one object called [objectName]. */
+    fun write3mf(mesh: Mesh, path: String, objectName: String): PipelineStatus
+
+    /**
+     * Empty photo-mode point cloud that keeps points inside [box] and at least [floorMarginMm] above
+     * its base. Null if it can't be allocated.
+     */
+    fun createPointCloud(box: BoxSize, floorMarginMm: Double): PointCloud?
 }
 
 /** One depth map, as the platform's AR layer delivers it. [depthMm] is row-major, width × height. */
@@ -74,6 +96,9 @@ interface TsdfVolume {
      * the object in at most [maxOutsideFraction] of them.
      */
     fun extractHull(maxOutsideFraction: Float, minSeen: Int): Mesh
+
+    /** Full-resolution marching cubes (ported from Open3D) for the final Live-mode mesh; empty if nothing fused. */
+    fun extractMarchingCubes(minWeight: Float): Mesh
 
     fun save(path: String): Boolean
 

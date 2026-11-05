@@ -2,6 +2,7 @@
 #include <jni.h>
 
 #include "facet_mesh.h"
+#include "facet_pipeline.h"
 
 extern "C" {
 
@@ -112,6 +113,126 @@ Java_app_facet_nativecore_FacetCoreJni_volumeLoad(JNIEnv *env, jobject /* this *
     facet_volume *v = facet_volume_load(p);
     env->ReleaseStringUTFChars(path, p);
     return reinterpret_cast<jlong>(v);
+}
+
+// ---- Mesh pipeline (facet_pipeline.h). Mesh handles are facet_trimesh*, clouds facet_point_cloud*. ----
+
+JNIEXPORT jlong JNICALL
+Java_app_facet_nativecore_FacetCoreJni_meshCreate(JNIEnv *env, jobject /* this */, jfloatArray positions,
+                                                  jintArray indices) {
+    const jsize nf = env->GetArrayLength(positions);
+    const jsize ni = env->GetArrayLength(indices);
+    jfloat *p = env->GetFloatArrayElements(positions, nullptr);
+    jint *i = env->GetIntArrayElements(indices, nullptr);
+    facet_trimesh *m = facet_trimesh_create(p, nf, reinterpret_cast<const int32_t *>(i), ni);
+    env->ReleaseIntArrayElements(indices, i, JNI_ABORT);
+    env->ReleaseFloatArrayElements(positions, p, JNI_ABORT);
+    return reinterpret_cast<jlong>(m);
+}
+
+JNIEXPORT void JNICALL
+Java_app_facet_nativecore_FacetCoreJni_meshDestroy(JNIEnv * /* env */, jobject /* this */, jlong mesh) {
+    facet_trimesh_destroy(reinterpret_cast<facet_trimesh *>(mesh));
+}
+
+JNIEXPORT jfloatArray JNICALL
+Java_app_facet_nativecore_FacetCoreJni_meshPositions(JNIEnv *env, jobject /* this */, jlong mesh) {
+    int32_t n = 0;
+    const float *p = facet_trimesh_positions(reinterpret_cast<facet_trimesh *>(mesh), &n);
+    jfloatArray out = env->NewFloatArray(n);
+    if (out && n > 0) env->SetFloatArrayRegion(out, 0, n, p);
+    return out;
+}
+
+JNIEXPORT jintArray JNICALL
+Java_app_facet_nativecore_FacetCoreJni_meshIndices(JNIEnv *env, jobject /* this */, jlong mesh) {
+    int32_t n = 0;
+    const int32_t *p = facet_trimesh_indices(reinterpret_cast<facet_trimesh *>(mesh), &n);
+    jintArray out = env->NewIntArray(n);
+    if (out && n > 0) env->SetIntArrayRegion(out, 0, n, reinterpret_cast<const jint *>(p));
+    return out;
+}
+
+JNIEXPORT jlong JNICALL
+Java_app_facet_nativecore_FacetCoreJni_volumeExtractMarchingCubes(JNIEnv * /* env */, jobject /* this */,
+                                                                   jlong volume, jfloat minWeight) {
+    return reinterpret_cast<jlong>(
+        facet_volume_extract_marching_cubes(reinterpret_cast<facet_volume *>(volume), minWeight));
+}
+
+JNIEXPORT jint JNICALL
+Java_app_facet_nativecore_FacetCoreJni_meshRepair(JNIEnv * /* env */, jobject /* this */, jlong mesh,
+                                                  jfloat baseCutZ, jfloat plinthHeight, jfloat plinthMargin) {
+    return facet_trimesh_repair(reinterpret_cast<facet_trimesh *>(mesh), baseCutZ, plinthHeight, plinthMargin);
+}
+
+JNIEXPORT jint JNICALL
+Java_app_facet_nativecore_FacetCoreJni_meshDecimate(JNIEnv * /* env */, jobject /* this */, jlong mesh,
+                                                    jint targetTriangles, jfloat maxError) {
+    return facet_trimesh_decimate(reinterpret_cast<facet_trimesh *>(mesh), targetTriangles, maxError);
+}
+
+JNIEXPORT jint JNICALL
+Java_app_facet_nativecore_FacetCoreJni_meshWriteStl(JNIEnv *env, jobject /* this */, jlong mesh, jstring path) {
+    const char *p = env->GetStringUTFChars(path, nullptr);
+    const int32_t status = facet_trimesh_write_stl(reinterpret_cast<facet_trimesh *>(mesh), p);
+    env->ReleaseStringUTFChars(path, p);
+    return status;
+}
+
+JNIEXPORT jint JNICALL
+Java_app_facet_nativecore_FacetCoreJni_meshWrite3mf(JNIEnv *env, jobject /* this */, jlong mesh, jstring path,
+                                                    jstring name) {
+    const char *p = env->GetStringUTFChars(path, nullptr);
+    const char *n = env->GetStringUTFChars(name, nullptr);
+    const int32_t status = facet_trimesh_write_3mf(reinterpret_cast<facet_trimesh *>(mesh), p, n);
+    env->ReleaseStringUTFChars(name, n);
+    env->ReleaseStringUTFChars(path, p);
+    return status;
+}
+
+JNIEXPORT jlong JNICALL
+Java_app_facet_nativecore_FacetCoreJni_cloudCreate(JNIEnv * /* env */, jobject /* this */, jfloat w, jfloat d,
+                                                   jfloat h, jfloat floorMargin) {
+    return reinterpret_cast<jlong>(facet_point_cloud_create(w, d, h, floorMargin));
+}
+
+JNIEXPORT void JNICALL
+Java_app_facet_nativecore_FacetCoreJni_cloudDestroy(JNIEnv * /* env */, jobject /* this */, jlong cloud) {
+    facet_point_cloud_destroy(reinterpret_cast<facet_point_cloud *>(cloud));
+}
+
+JNIEXPORT jint JNICALL
+Java_app_facet_nativecore_FacetCoreJni_cloudAddDepth(JNIEnv *env, jobject /* this */, jlong cloud,
+                                                     jshortArray depth, jint width, jint height,
+                                                     jbyteArray confidence,
+                                                     jfloat fx, jfloat fy, jfloat cx, jfloat cy,
+                                                     jfloatArray camToBox, jfloat minConfidence) {
+    float m[16];
+    env->GetFloatArrayRegion(camToBox, 0, 16, m);
+    jshort *d = env->GetShortArrayElements(depth, nullptr);
+    jbyte *c = confidence ? env->GetByteArrayElements(confidence, nullptr) : nullptr;
+    const int32_t added = facet_point_cloud_add_depth(
+        reinterpret_cast<facet_point_cloud *>(cloud), reinterpret_cast<const uint16_t *>(d), width, height, width,
+        reinterpret_cast<const uint8_t *>(c), width, fx, fy, cx, cy, m, minConfidence);
+    if (c) env->ReleaseByteArrayElements(confidence, c, JNI_ABORT);
+    env->ReleaseShortArrayElements(depth, d, JNI_ABORT);
+    return added;
+}
+
+JNIEXPORT jint JNICALL
+Java_app_facet_nativecore_FacetCoreJni_cloudSize(JNIEnv * /* env */, jobject /* this */, jlong cloud) {
+    return facet_point_cloud_size(reinterpret_cast<facet_point_cloud *>(cloud));
+}
+
+JNIEXPORT jlong JNICALL
+Java_app_facet_nativecore_FacetCoreJni_poissonReconstruct(JNIEnv *env, jobject /* this */, jlong cloud,
+                                                          jint depth, jfloat trimFraction, jintArray status) {
+    int32_t s = 0;
+    facet_trimesh *m = facet_poisson_reconstruct(reinterpret_cast<facet_point_cloud *>(cloud), depth, trimFraction, &s);
+    const jint out = s;
+    env->SetIntArrayRegion(status, 0, 1, &out);
+    return reinterpret_cast<jlong>(m);
 }
 
 }  // extern "C"

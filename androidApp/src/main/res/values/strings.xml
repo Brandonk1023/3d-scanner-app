@@ -157,6 +157,24 @@
     <string name="about_licences">Open-source licences</string>
     <string name="about_privacy">Privacy</string>
     <string name="about_privacy_body">%1$s has no internet access. Scans, photos and models stay on this phone until you save or share a file yourself.</string>
+    <string name="about_native_libraries">Native libraries</string>
+    <!-- Google APIs Terms of Service disclosure for the ARCore client library. Keep the wording. -->
+    <string name="about_arcore_disclosure">This app uses Google Play Services for AR (ARCore), provided by Google LLC and governed by the Google Privacy Policy.</string>
+    <!-- The part of about_arcore_disclosure that links to the policy. Must appear in about_arcore_disclosure. -->
+    <string name="about_arcore_policy_link">Google Privacy Policy</string>
+    <string name="about_arcore_policy_url" translatable="false">https://policies.google.com/privacy</string>
+    <!-- Years from the pinned meshoptimizer LICENSE (v1.3). -->
+    <string name="about_credit_meshoptimizer" translatable="false">Uses meshoptimizer. Copyright (c) 2016-2026 Arseny Kapoulkine</string>
+
+    <!-- Native libraries (Settings › About) -->
+    <string name="native_libraries_title">Native libraries</string>
+    <string name="native_libraries_intro">These libraries are built into the app\'s 3D processing core, so they aren\'t in the open-source licences list. Tap one to read its licence.</string>
+    <string name="native_libraries_section_core">3D processing core</string>
+    <string name="native_libraries_section_assets">Fonts and models</string>
+    <string name="native_libraries_section_gradle">Full licence texts for the open-source licences list</string>
+    <string name="native_libraries_line">%1$s · %2$s</string>
+    <string name="native_libraries_shown">Licence shown</string>
+    <string name="native_libraries_hidden">Licence hidden</string>
 
     <!-- Placement -->
     <string name="cd_cancel_scan">Cancel scan</string>

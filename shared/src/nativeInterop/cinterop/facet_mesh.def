@@ -1,7 +1,7 @@
-# Kotlin/Native binding for the C++ core's C API (native/include/facet_mesh.h).
-# The static library is built per Apple target by shared/build.gradle.kts (buildFacetCore* tasks)
-# and embedded into the klib; -libraryPath is passed by Gradle.
-headers = facet_mesh.h
+# Kotlin/Native binding for the C++ core's C API (native/include/facet_mesh.h, facet_pipeline.h).
+# The static library (core + Manifold + lib3mf + meshoptimizer, merged) is built per Apple target by
+# shared/build.gradle.kts (buildFacetCore* tasks) and embedded into the klib; -libraryPath is passed by Gradle.
+headers = facet_mesh.h facet_pipeline.h
 package = app.facet.nativecore
-staticLibraries = libfacet_core.a
+staticLibraries = libfacet_core_all.a
 linkerOpts = -lc++
