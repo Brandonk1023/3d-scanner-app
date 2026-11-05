@@ -23,6 +23,32 @@ data class ScanTuning(
         val autoSizeClusterRadiusMm: Double = 300.0,
         val boxMinSideMm: Double = 20.0,
         val boxMaxSideMm: Double = 2_500.0,
+        /** A cell whose median height above the fitted table is below this is table, not object. */
+        val autoSizeMinPointHeightMm: Double = 10.0,
+        /** How far the real tabletop may sit above/below the AR plane estimate. */
+        val autoSizeTableSearchMm: Double = 80.0,
+        /** Horizontal grid cell used to judge object vs table and separate nearby clutter. */
+        val autoSizeCellMm: Double = 15.0,
+        /** A cell needs this many depth samples before its height is trusted. */
+        val autoSizeMinPointsPerCell: Int = 6,
+        /** Object cells up to this many cells apart still join (depth holes, mug handles). */
+        val autoSizeCellGap: Int = 2,
+        /** Distinct depth frames gathered for one fit (ARCore depth barely changes while the phone is still). */
+        val autoSizeDepthFrames: Int = 3,
+        /** The tap must land within this of the nearest object point, or nothing is fitted. */
+        val autoSizeMaxSeedGapMm: Double = 100.0,
+        /** Fewer object points than this → no auto-fit; fall back to [defaultBoxSideMm]. */
+        val autoSizeMinPoints: Int = 25,
+        /** Fraction of outlier points trimmed from each end of every axis. */
+        val autoSizeTrimFraction: Double = 0.03,
+        /** Clearance added around the fitted object on every side and above it. */
+        val autoSizeMarginMm: Double = 10.0,
+        /** Box placed when auto-fit finds nothing (cube). */
+        val defaultBoxSideMm: Double = 150.0,
+        /** Depth samples farther than this from the camera are ignored. */
+        val maxDepthMm: Double = 4_000.0,
+        /** One drag event can change a box side by at most this (guards against degenerate views). */
+        val maxDragStepMm: Double = 200.0,
     )
 
     data class Coverage(

@@ -18,6 +18,7 @@ import app.facet.android.ui.onboarding.ONBOARDING_PAGES
 import app.facet.android.ui.onboarding.OnboardingScreen
 import app.facet.android.ui.permission.CameraPermissionScreen
 import app.facet.android.ui.permission.hasCameraPermission
+import app.facet.android.ui.scan.ScanScreen
 import app.facet.android.ui.settings.SettingsScreen
 import app.facet.android.ui.stub.StubLink
 import app.facet.android.ui.stub.StubScreen
@@ -29,7 +30,7 @@ import app.facet.settings.ThemeMode
 
 /**
  * Navigation graph (design/docs/02-user-flow.md). Phase 1: real screens for first launch, gallery,
- * settings, viewer and export. Scan, processing and scale check stay stubs until Phases 2–7.
+ * settings, viewer and export; Phase 2: scan placement. Processing and scale check stay stubs.
  */
 @Composable
 fun FacetNavHost(
@@ -120,20 +121,9 @@ fun FacetNavHost(
         }
 
         composable<Scan> {
-            // Camera / AR screens are always dark. Phase 2 (AR placement) replaces this stub.
+            // Camera / AR screens are always dark. Phase 2: placement; capture and finish follow in Phase 3.
             FacetTheme(themeMode = ThemeMode.DARK) {
-                StubScreen(
-                    title = stringResource(R.string.stub_scan_title),
-                    reference = "Placement-Surface.png, Placement-Box.png, A-Capture.png, Capture-TrackingLost.png, " +
-                        "Finish-Incomplete.png, Finish-Mode.png, Scan-Interrupted.png",
-                    detail = stringResource(R.string.stub_scan_states),
-                    onBack = { nav.popBackStack() },
-                    links = listOf(
-                        StubLink(R.string.mode_quick, primary = true) { nav.navigate(Viewer("mug-01")) { popUpTo(Gallery) } },
-                        StubLink(R.string.mode_high) { nav.navigate(Processing("mug-01")) { popUpTo(Gallery) } },
-                        StubLink(R.string.discard_scan) { nav.popBackStack() },
-                    ),
-                )
+                ScanScreen(onClose = { nav.popBackStack() })
             }
         }
 
