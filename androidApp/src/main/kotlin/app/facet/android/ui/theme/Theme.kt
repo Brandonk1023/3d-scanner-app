@@ -53,11 +53,7 @@ fun FacetTheme(
     themeMode: ThemeMode = ThemeMode.SYSTEM,
     content: @Composable () -> Unit,
 ) {
-    val dark = when (themeMode) {
-        ThemeMode.SYSTEM -> isSystemInDarkTheme()
-        ThemeMode.LIGHT -> false
-        ThemeMode.DARK -> true
-    }
+    val dark = isDarkTheme(themeMode)
     val colors = if (dark) DarkFacetColors else LightFacetColors
     CompositionLocalProvider(
         LocalFacetColors provides colors,
@@ -70,6 +66,14 @@ fun FacetTheme(
             content = content,
         )
     }
+}
+
+/** Whether [themeMode] resolves to dark right now. */
+@Composable
+fun isDarkTheme(themeMode: ThemeMode): Boolean = when (themeMode) {
+    ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    ThemeMode.LIGHT -> false
+    ThemeMode.DARK -> true
 }
 
 /** Access with `Facet.colors.accent`, `Facet.type.dataMono`, etc. */

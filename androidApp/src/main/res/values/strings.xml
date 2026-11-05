@@ -11,6 +11,9 @@
     <string name="action_close">Close</string>
     <string name="action_more">More options</string>
     <string name="action_settings">Settings</string>
+    <string name="action_done">Done</string>
+    <string name="action_save">Save</string>
+    <string name="action_clear">Clear</string>
     <string name="unit_mm">mm</string>
     <string name="unit_in">in</string>
     <string name="dims_format">%1$s × %2$s × %3$s %4$s</string>
@@ -44,6 +47,8 @@
     <string name="perm_cam_title">%1$s needs your camera</string>
     <string name="perm_cam_body">The camera and depth sensor measure your object. Video is processed on this phone and never leaves it.</string>
     <string name="perm_cam_denied">Turned it off earlier? Allow it in Android Settings.</string>
+    <!-- The part of perm_cam_denied that links to Android Settings. Must appear in perm_cam_denied. -->
+    <string name="perm_cam_settings_link">Android Settings</string>
     <string name="perm_cam_allow">Allow camera</string>
     <string name="perm_cam_later">Not now</string>
     <string name="device_title">Device check</string>
@@ -57,6 +62,21 @@
     <string name="device_check_arcore_update">Update required</string>
     <string name="device_update_action">Update in Play Store</string>
     <string name="device_check_again">Check again</string>
+    <string name="device_checking_title">Checking your phone</string>
+    <string name="device_checking">Checking…</string>
+    <string name="device_ready_title">Ready to scan</string>
+    <string name="device_install_title">One install needed</string>
+    <string name="device_install_action">Install from Play Store</string>
+    <string name="device_check_arcore_ok">Up to date</string>
+    <string name="device_check_arcore_install">Not installed</string>
+    <string name="device_check_depth_pending">Checked after the update</string>
+    <string name="device_check_depth_no">Not available on this phone</string>
+    <string name="device_check_camera_no">Not allowed yet · needed to scan</string>
+    <string name="device_check_unknown">Couldn\'t check</string>
+    <string name="device_failed_title">Couldn\'t check this phone</string>
+    <string name="device_failed_body">Make sure Google Play Services for AR is installed and up to date, then check again.</string>
+    <string name="device_this_phone">This phone</string>
+    <string name="device_supported_url" translatable="false">https://developers.google.com/ar/devices</string>
     <string name="unsupported_title">This phone can\'t scan yet</string>
     <string name="unsupported_body">%1$s needs the ARCore Depth API to measure objects. %2$s doesn\'t support it.</string>
     <string name="unsupported_card_title">What you can do</string>
@@ -76,6 +96,13 @@
     <string name="empty_title">No scans yet</string>
     <string name="empty_body">Your scans are saved here, on this phone. Start with something small and matte, like a mug or a tool handle.</string>
     <string name="empty_tips">Scanning tips</string>
+    <string name="gallery_no_matches">No scans match</string>
+    <string name="gallery_no_matches_body">Try another name or filter.</string>
+    <string name="cd_scan_actions">Show actions</string>
+    <string name="rename_title">Rename scan</string>
+    <string name="rename_label">Name</string>
+    <string name="delete_title">Delete %1$s?</string>
+    <string name="delete_body">The model and its saved photos are removed from this phone. This can\'t be undone.</string>
     <string name="chip_high">High detail</string>
     <string name="chip_quick">Quick</string>
     <string name="chip_processing">Processing %1$d%%</string>
@@ -114,11 +141,22 @@
     <string name="settings_haptics">Haptic guidance</string>
     <string name="settings_haptics_sub">Vibration pattern for each message</string>
     <string name="settings_storage">Storage</string>
-    <string name="storage_scans">%1$d scans</string>
+    <plurals name="storage_scans">
+        <item quantity="one">%1$d scan</item>
+        <item quantity="other">%1$d scans</item>
+    </plurals>
     <string name="storage_summary">%1$s · %2$s free</string>
     <string name="storage_models">Models %1$s</string>
     <string name="storage_photos">Saved photos %1$s</string>
     <string name="storage_clear_photos">Clear saved photos</string>
+    <string name="clear_photos_title">Clear saved photos?</string>
+    <string name="clear_photos_body">Your models stay. These scans can no longer be reprocessed in High detail.</string>
+    <string name="settings_about">About</string>
+    <string name="about_version">Version</string>
+    <string name="about_version_value">%1$s · core %2$s</string>
+    <string name="about_licences">Open-source licences</string>
+    <string name="about_privacy">Privacy</string>
+    <string name="about_privacy_body">%1$s has no internet access. Scans, photos and models stay on this phone until you save or share a file yourself.</string>
 
     <!-- Placement -->
     <string name="cd_cancel_scan">Cancel scan</string>
@@ -247,6 +285,8 @@
     <string name="fmt_more_later">Coming later</string>
     <string name="save">Save</string>
     <string name="share">Share</string>
+    <string name="export_subtitle">%1$s · %2$s</string>
+    <string name="cd_file_size">File size about %1$s</string>
     <string name="saved_to">Saved to %1$s</string>
     <string name="open">Open</string>
 

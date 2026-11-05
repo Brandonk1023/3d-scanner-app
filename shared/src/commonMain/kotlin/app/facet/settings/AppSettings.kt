@@ -1,8 +1,9 @@
 package app.facet.settings
 
+import app.facet.export.ExportFormat
 import app.facet.mesh.Smoothing
 
-/** Persisted with DataStore from Phase 1. Defaults match the designs. */
+/** Persisted with DataStore ([SettingsRepository]). Defaults match the designs. */
 data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val units: LengthUnit = LengthUnit.MILLIMETRES,
@@ -11,6 +12,8 @@ data class AppSettings(
     val smoothing: Smoothing = Smoothing.LOW,
     val hapticGuidance: Boolean = true,
     val onboardingDone: Boolean = false,
+    /** The export sheet remembers the last format used. */
+    val lastExportFormat: ExportFormat = ExportFormat.THREE_MF,
 )
 
 /** Appearance. Camera/AR screens are always dark regardless. */

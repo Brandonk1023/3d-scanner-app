@@ -85,6 +85,9 @@ data class ScanTuning(
         val highDetailVoxelDivisor: Double = 600.0,
         val highDetailVoxelMinMm: Double = 0.4,
         val highDetailVoxelMaxMm: Double = 4.0,
+        /** Shown as "Ready in ~N s" / "About N min" until real timings are measured. */
+        val quickEstimateSec: Int = 5,
+        val highDetailEstimateMin: Int = 4,
     )
 
     data class Keyframes(

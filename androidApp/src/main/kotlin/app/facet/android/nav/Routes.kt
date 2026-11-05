@@ -4,17 +4,14 @@ import kotlinx.serialization.Serializable
 
 // Type-safe Navigation Compose routes — one per route in design/docs/02-user-flow.md.
 
-/** `onboarding/{page}`, page 1..3. */
-@Serializable data class Onboarding(val page: Int = 1) {
-    init { require(page in 1..PAGES) }
-    companion object { const val PAGES = 3 }
-}
+/** `onboarding/{page}`, page 1..3. [tipsOnly] = page 2 reopened from the gallery's "Scanning tips". */
+@Serializable data class Onboarding(val page: Int = 1, val tipsOnly: Boolean = false)
 
-/** `permission/camera` */
-@Serializable data object CameraPermission
+/** `permission/camera`. [fromOnboarding]: first-launch flow (→ device check) vs. asked from New scan (→ scan). */
+@Serializable data class CameraPermission(val fromOnboarding: Boolean = true)
 
 /** `device-check` — ARCore checks, install/update, and the Unsupported device state. */
-@Serializable data object DeviceCheck
+@Serializable data class DeviceCheck(val fromOnboarding: Boolean = true)
 
 /** `gallery` — home. */
 @Serializable data object Gallery

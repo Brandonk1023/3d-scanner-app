@@ -10,10 +10,14 @@
 
     <!-- AR-capable devices only (Play Store filter). Depth API support is checked at runtime. -->
     <uses-feature android:name="android.hardware.camera.ar" android:required="true" />
+    <uses-feature android:name="android.hardware.camera" android:required="true" />
 
     <!-- allowBackup=false: scans must not be copied to cloud backup. -->
     <application
+        android:name=".FacetApp"
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="false"
         android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"

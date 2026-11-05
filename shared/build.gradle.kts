@@ -27,12 +27,14 @@ kotlin {
     }
 
     sourceSets {
+        all { languageSettings.optIn("kotlin.time.ExperimentalTime") }
         commonMain.dependencies {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.kotlinx.datetime)
             implementation(libs.okio)
             api(libs.androidx.lifecycle.viewmodel)
+            api(libs.androidx.datastore.preferences.core)
         }
         commonTest.dependencies {
             implementation(kotlin("test"))
