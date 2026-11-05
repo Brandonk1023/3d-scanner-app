@@ -1,0 +1,47 @@
+# --- Dev-only notes (never pushed) ---
+DEV_TODO.md
+
+# --- OS / editors ---
+.DS_Store
+*.swp
+.idea/
+*.iml
+.vscode/*
+!.vscode/extensions.json
+.fleet/
+
+# --- Gradle / Kotlin ---
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+local.properties
+.kotlin/
+captures/
+*.hprof
+
+# --- Android ---
+*.apk
+*.aab
+*.ap_
+*.dex
+.externalNativeBuild/
+.cxx/
+*.jks
+*.keystore
+keystore.properties
+google-services.json
+
+# --- Native (CMake) ---
+native/build*/
+cmake-build-*/
+
+# --- Xcode / iOS ---
+iosApp/*.xcodeproj
+iosApp/*.xcworkspace
+xcuserdata/
+DerivedData/
+*.xcuserstate
+*.ipa
+*.dSYM.zip
+*.dSYM
+iosApp/build/

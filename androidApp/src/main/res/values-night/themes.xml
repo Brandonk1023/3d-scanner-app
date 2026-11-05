@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Facet" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/facet_bg</item>
+    </style>
+    <color name="facet_bg">#0E0F10</color>
+</resources>

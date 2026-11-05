@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DS · Foundations</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#4D6B00}a:hover{color:#2F4200}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1320px; box-sizing: border-box; padding: 56px 64px; background: #E9EBE7; font-family: 'Inter Tight', system-ui, sans-serif; color: #121416; display: flex; flex-direction: column; gap: 28px">
+
+<div style="display: flex; align-items: flex-end; justify-content: space-between">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<h1 style="margin: 0; font-size: 40px; line-height: 44px; font-weight: 700">Foundations</h1>
+<p style="margin: 0; font-size: 16px; line-height: 24px; color: #4E555C">Colour tokens for Light and Dark. The app follows the system theme by default; users can override in Settings › Appearance.</p>
+</div>
+<div style="display: flex; gap: 2px; padding: 3px; border-radius: 20px; background: #FFFFFF; border: 1px solid #D3D8D1; font-size: 14px; font-weight: 600">
+<span style="height: 34px; padding: 0 14px; border-radius: 17px; background: #121416; color: #FFFFFF; display: flex; align-items: center">System</span>
+<span style="height: 34px; padding: 0 14px; display: flex; align-items: center; color: #4E555C">Light</span>
+<span style="height: 34px; padding: 0 14px; display: flex; align-items: center; color: #4E555C">Dark</span>
+</div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px">
+<div style="padding: 24px; border-radius: 20px; background: #F6F7F5; border: 1px solid #D3D8D1; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 700">Light</h2>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #F6F7F5; border: 1px solid #D3D8D1"></span><span style="font-size: 13px; font-weight: 600">bg</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">#F6F7F5</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #FFFFFF; border: 1px solid #D3D8D1"></span><span style="font-size: 13px; font-weight: 600">surface</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">#FFFFFF</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #ECEEEA; border: 1px solid #D3D8D1"></span><span style="font-size: 13px; font-weight: 600">surface-2</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">#ECEEEA</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #D3D8D1"></span><span style="font-size: 13px; font-weight: 600">border</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">#D3D8D1</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #121416"></span><span style="font-size: 13px; font-weight: 600">text</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">#121416 · 17.6:1</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #4E555C"></span><span style="font-size: 13px; font-weight: 600">text-muted</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">#4E555C · 7.0:1</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #D4F54A; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #12140A">Aa</span><span style="font-size: 13px; font-weight: 600">accent (fill)</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">#D4F54A</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #4D6B00"></span><span style="font-size: 13px; font-weight: 600">accent-ink</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">#4D6B00 · 6.2:1</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #12140A"></span><span style="font-size: 13px; font-weight: 600">on-accent</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">#12140A</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #1E7A3C"></span><span style="font-size: 13px; font-weight: 600">success</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">#1E7A3C</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #9A5B00"></span><span style="font-size: 13px; font-weight: 600">warning</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">#9A5B00</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #C2281B"></span><span style="font-size: 13px; font-weight: 600">danger</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">#C2281B</span></div>
+</div>
+</div>
+
+<div style="padding: 24px; border-radius: 20px; background: #0E0F10; border: 1px solid #2D3135; color: #F2F3F4; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 700">Dark</h2>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #0E0F10; border: 1px solid #2D3135"></span><span style="font-size: 13px; font-weight: 600">bg</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A9AFB6">#0E0F10</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #17191B; border: 1px solid #2D3135"></span><span style="font-size: 13px; font-weight: 600">surface</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A9AFB6">#17191B</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #1F2224; border: 1px solid #2D3135"></span><span style="font-size: 13px; font-weight: 600">surface-2</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A9AFB6">#1F2224</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #2D3135"></span><span style="font-size: 13px; font-weight: 600">border</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A9AFB6">#2D3135</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #F2F3F4"></span><span style="font-size: 13px; font-weight: 600">text</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A9AFB6">#F2F3F4 · 17.9:1</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #A9AFB6"></span><span style="font-size: 13px; font-weight: 600">text-muted</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A9AFB6">#A9AFB6 · 8.6:1</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #D4F54A; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #12140A">Aa</span><span style="font-size: 13px; font-weight: 600">accent (fill)</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A9AFB6">#D4F54A</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #D4F54A"></span><span style="font-size: 13px; font-weight: 600">accent-ink</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A9AFB6">#D4F54A · 14.6:1</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #12140A; border: 1px solid #2D3135"></span><span style="font-size: 13px; font-weight: 600">on-accent</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A9AFB6">#12140A</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #4ADE80"></span><span style="font-size: 13px; font-weight: 600">success</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A9AFB6">#4ADE80</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #FFB547"></span><span style="font-size: 13px; font-weight: 600">warning</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A9AFB6">#FFB547</span></div>
+<div style="display: flex; flex-direction: column; gap: 6px"><span style="height: 56px; border-radius: 10px; background: #FF7A6E"></span><span style="font-size: 13px; font-weight: 600">danger</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #A9AFB6">#FF7A6E</span></div>
+</div>
+</div>
+</div>
+
+<div style="display: flex; gap: 32px">
+<div style="flex-grow: 1; padding: 24px; border-radius: 20px; background: #FFFFFF; border: 1px solid #D3D8D1; display: flex; flex-direction: column; gap: 4px">
+<h2 style="margin: 0 0 10px; font-size: 18px; line-height: 24px; font-weight: 700">Type <span style="font-weight: 400; color: #4E555C">· Inter Tight for UI, JetBrains Mono for every measurement · sizes in sp, layouts reflow to 200%</span></h2>
+<div style="display: flex; align-items: baseline; gap: 24px; padding: 6px 0; border-bottom: 1px solid #ECEEEA"><span style="width: 170px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">display-mono 36/40</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 36px; line-height: 40px; font-weight: 700">118.6 mm</span></div>
+<div style="display: flex; align-items: baseline; gap: 24px; padding: 6px 0; border-bottom: 1px solid #ECEEEA"><span style="width: 170px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">headline 28/34 · 700</span><span style="font-size: 28px; line-height: 34px; font-weight: 700">Your scans</span></div>
+<div style="display: flex; align-items: baseline; gap: 24px; padding: 6px 0; border-bottom: 1px solid #ECEEEA"><span style="width: 170px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">guidance 22/28 · 700</span><span style="font-size: 22px; line-height: 28px; font-weight: 700">Move slower</span></div>
+<div style="display: flex; align-items: baseline; gap: 24px; padding: 6px 0; border-bottom: 1px solid #ECEEEA"><span style="width: 170px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">title 18/24 · 600</span><span style="font-size: 18px; line-height: 24px; font-weight: 600">Check scale</span></div>
+<div style="display: flex; align-items: baseline; gap: 24px; padding: 6px 0; border-bottom: 1px solid #ECEEEA"><span style="width: 170px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">body 16/24 · 400</span><span style="font-size: 16px; line-height: 24px">High detail takes a few minutes and keeps finer edges.</span></div>
+<div style="display: flex; align-items: baseline; gap: 24px; padding: 6px 0; border-bottom: 1px solid #ECEEEA"><span style="width: 170px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">body-sm 14/20 · 400</span><span style="font-size: 14px; line-height: 20px; color: #4E555C">Quick result · 86k triangles</span></div>
+<div style="display: flex; align-items: baseline; gap: 24px; padding: 6px 0; border-bottom: 1px solid #ECEEEA"><span style="width: 170px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">label 14/20 · 600</span><span style="font-size: 14px; line-height: 20px; font-weight: 600">Export</span></div>
+<div style="display: flex; align-items: baseline; gap: 24px; padding: 6px 0"><span style="width: 170px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">data-mono 13/16 · 500</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 16px; font-weight: 500">W 118.6 · D 92.4 · H 98.0 mm</span></div>
+</div>
+
+<div style="width: 470px; flex-shrink: 0; padding: 24px; border-radius: 20px; background: #FFFFFF; border: 1px solid #D3D8D1; display: flex; flex-direction: column; gap: 18px">
+<h2 style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 700">Spacing, radius, targets</h2>
+<div style="display: flex; flex-direction: column; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">
+<div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px">4</span><span style="width: 4px; height: 12px; background: #121416"></span></div>
+<div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px">8</span><span style="width: 8px; height: 12px; background: #121416"></span></div>
+<div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px">12</span><span style="width: 12px; height: 12px; background: #121416"></span></div>
+<div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px">16</span><span style="width: 16px; height: 12px; background: #121416"></span></div>
+<div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px">24</span><span style="width: 24px; height: 12px; background: #121416"></span></div>
+<div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px">32</span><span style="width: 32px; height: 12px; background: #121416"></span></div>
+<div style="display: flex; align-items: center; gap: 12px"><span style="width: 56px">48</span><span style="width: 48px; height: 12px; background: #121416"></span></div>
+</div>
+<div style="display: flex; gap: 14px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><span style="width: 64px; height: 48px; border-radius: 8px; border: 2px solid #121416"></span>r8 chip</div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><span style="width: 64px; height: 48px; border-radius: 14px; border: 2px solid #121416"></span>r14 card</div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><span style="width: 64px; height: 48px; border-radius: 20px; border: 2px solid #121416"></span>r20 panel</div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><span style="width: 64px; height: 48px; border-radius: 24px; border: 2px solid #121416"></span>pill</div>
+</div>
+<div style="display: flex; gap: 20px; align-items: flex-end; font-size: 13px; line-height: 18px; color: #4E555C">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><span style="width: 48px; height: 48px; border-radius: 24px; border: 2px dashed #4D6B00"></span>48 dp app min</div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 6px"><span style="width: 60px; height: 60px; border-radius: 30px; border: 2px dashed #4D6B00"></span>60 dp AR min</div>
+<span style="flex-grow: 1">Scanning controls sit in the bottom 200 dp — the one-hand thumb zone.</span>
+</div>
+</div>
+</div>
+
+<div style="padding: 24px; border-radius: 20px; background: #FFFFFF; border: 1px solid #D3D8D1; display: flex; flex-direction: column; gap: 16px">
+<h2 style="margin: 0; font-size: 18px; line-height: 24px; font-weight: 700">AR overlay colours <span style="font-weight: 400; color: #4E555C">· the same in both themes; every element gets a dark halo or glass so it reads on any camera image</span></h2>
+<div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 88px; border-radius: 14px; background: linear-gradient(135deg, #F4EFE4 0%, #F4EFE4 45%, #6B655C 45%, #2E2B27 100%); display: flex; align-items: center; justify-content: center"><span style="height: 40px; padding: 0 16px; border-radius: 20px; background: rgba(14,15,16,0.78); color: #FFFFFF; font-size: 14px; font-weight: 600; display: flex; align-items: center">Glass</span></div><span style="font-size: 13px; font-weight: 600">glass</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">#0E0F10 @ 78% + blur 12</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 88px; border-radius: 14px; background: linear-gradient(135deg, #F4EFE4 0%, #F4EFE4 45%, #6B655C 45%, #2E2B27 100%); display: flex; align-items: center; justify-content: center"><span style="width: 90px; height: 6px; border-radius: 3px; background: #FFFFFF; box-shadow: 0 0 0 3px rgba(0,0,0,0.45)"></span></div><span style="font-size: 13px; font-weight: 600">halo</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">#000 @ 45%, +3–4 px</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 88px; border-radius: 14px; background: linear-gradient(135deg, #F4EFE4 0%, #F4EFE4 45%, #6B655C 45%, #2E2B27 100%); display: flex; align-items: center; justify-content: center"><span style="height: 40px; padding: 0 16px; border-radius: 20px; background: #D4F54A; color: #12140A; font-size: 14px; font-weight: 700; display: flex; align-items: center; box-shadow: 0 0 0 3px rgba(0,0,0,0.35)">Guide</span></div><span style="font-size: 13px; font-weight: 600">ar-guide · captured</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">#D4F54A / #12140A</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 88px; border-radius: 14px; background: linear-gradient(135deg, #F4EFE4 0%, #F4EFE4 45%, #6B655C 45%, #2E2B27 100%); display: flex; align-items: center; justify-content: center"><span style="height: 40px; padding: 0 16px; border-radius: 20px; background: #FFFFFF; color: #111214; font-size: 14px; font-weight: 700; display: flex; align-items: center; box-shadow: 0 0 0 3px rgba(0,0,0,0.35)">Advice</span></div><span style="font-size: 13px; font-weight: 600">ar-advice</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">#FFFFFF / #111214</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 88px; border-radius: 14px; background: linear-gradient(135deg, #F4EFE4 0%, #F4EFE4 45%, #6B655C 45%, #2E2B27 100%); display: flex; align-items: center; justify-content: center"><span style="height: 40px; padding: 0 16px; border-radius: 20px; background: #FFB547; color: #1F1300; font-size: 14px; font-weight: 700; display: flex; align-items: center; box-shadow: 0 0 0 3px rgba(0,0,0,0.35)">Warning</span></div><span style="font-size: 13px; font-weight: 600">ar-warning</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">#FFB547 / #1F1300</span></div>
+<div style="display: flex; flex-direction: column; gap: 8px"><div style="height: 88px; border-radius: 14px; background: linear-gradient(135deg, #F4EFE4 0%, #F4EFE4 45%, #6B655C 45%, #2E2B27 100%); display: flex; align-items: center; justify-content: center"><span style="height: 40px; padding: 0 16px; border-radius: 20px; background: #FF6B5E; color: #1A0503; font-size: 14px; font-weight: 700; display: flex; align-items: center; box-shadow: 0 0 0 3px rgba(0,0,0,0.35)">Critical</span></div><span style="font-size: 13px; font-weight: 600">ar-critical</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #4E555C">#FF6B5E / #1A0503</span></div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1320}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

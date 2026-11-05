@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>A · 3D viewer</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;700&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#D4F54A}a:hover{color:#E6FF8A}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #0E0F10; font-family: 'Inter Tight', system-ui, sans-serif; color: #F2F3F4">
+<div style="position: absolute; left: 8px; top: 40px; width: 374px; height: 56px; display: flex; align-items: center; gap: 4px">
+<button aria-label="Back to gallery" style="width: 48px; height: 48px; border-radius: 24px; border: none; background: transparent; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F2F3F4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg></button>
+<div style="flex-grow: 1; display: flex; flex-direction: column">
+<span style="font-size: 19px; line-height: 24px; font-weight: 700">Mug_01</span>
+<span style="font-size: 13px; line-height: 18px; color: #A9AFB6">Quick result · 86k triangles</span>
+</div>
+<button aria-label="More options" style="width: 48px; height: 48px; border-radius: 24px; border: none; background: transparent; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#F2F3F4" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="M12 5h.01M12 12h.01M12 19h.01"></path></svg></button>
+</div>
+
+<div style="position: absolute; left: 16px; top: 108px; width: 358px; height: 436px; border-radius: 20px; background: #17191B; border: 1px solid #26292C; overflow: hidden">
+<svg width="358" height="436" viewBox="0 0 358 436" role="img" aria-label="Shaded 3D model of a mug with width and height dimension lines" style="position: absolute; left: 0; top: 0">
+<defs>
+<linearGradient id="av-body" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4A4E53"></stop><stop offset="0.38" stop-color="#D7DADE"></stop><stop offset="1" stop-color="#43474C"></stop></linearGradient>
+</defs>
+<g stroke="#2A2E32" stroke-width="1">
+<path d="M0 300 L358 300 M0 330 L358 330 M0 366 L358 366 M0 410 L358 410"></path>
+<path d="M179 280 L179 436 M120 280 L60 436 M238 280 L298 436 M61 280 L-60 436 M297 280 L418 436"></path>
+</g>
+<ellipse cx="190" cy="306" rx="78" ry="12" fill="#000000" opacity="0.5"></ellipse>
+<path d="M129 126 L129 280 Q129 304 153 304 L205 304 Q229 304 229 280 L229 126 Z" fill="url(#av-body)"></path>
+<path d="M229 156 C 274 156 274 252 229 250" fill="none" stroke="#8D9196" stroke-width="12"></path>
+<ellipse cx="179" cy="126" rx="50" ry="11" fill="#B8BCC1"></ellipse>
+<ellipse cx="179" cy="127" rx="44" ry="8" fill="#3A3E42"></ellipse>
+<g fill="none" stroke="{{accent}}" stroke-width="1.5">
+<path d="M129 322 L129 346 M268 322 L268 346 M129 338 L268 338"></path>
+<path d="M290 115 L290 304 M282 115 L298 115 M282 304 L298 304"></path>
+</g>
+<g fill="none" stroke="{{accent}}" stroke-width="1" stroke-dasharray="2 3" opacity="0.7">
+<path d="M229 115 L282 115 M229 304 L282 304"></path>
+</g>
+</svg>
+<div style="position: absolute; left: 12px; top: 12px; height: 40px; padding: 3px; box-sizing: border-box; border-radius: 20px; background: #0E0F10; border: 1px solid #2D3135; display: flex; gap: 2px">
+<button aria-pressed="true" style="height: 32px; padding: 0 14px; border-radius: 16px; border: none; background: #F2F3F4; color: #0E0F10; font-family: 'Inter Tight', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer">Shaded</button>
+<button aria-pressed="false" style="height: 32px; padding: 0 14px; border-radius: 16px; border: none; background: transparent; color: #C9CDD2; font-family: 'Inter Tight', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer">Wireframe</button>
+</div>
+<button aria-label="Reset view" style="position: absolute; right: 12px; top: 12px; width: 44px; height: 44px; border-radius: 22px; border: 1px solid #2D3135; background: #0E0F10; display: flex; align-items: center; justify-content: center; padding: 0; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F2F3F4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"></path><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"></path></svg></button>
+<div style="position: absolute; left: 160px; top: 352px; padding: 2px 6px; border-radius: 4px; background: #0E0F10; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: {{accent}}">118.6</div>
+<div style="position: absolute; left: 300px; top: 198px; padding: 2px 6px; border-radius: 4px; background: #0E0F10; font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; color: {{accent}}">98.0</div>
+<svg width="44" height="44" viewBox="0 0 44 44" role="img" aria-label="Orientation: X, Y, Z axes" style="position: absolute; left: 14px; top: 378px">
+<path d="M10 34 L36 34" stroke="#FF6B5E" stroke-width="2"></path><path d="M10 34 L10 8" stroke="#7BD88F" stroke-width="2"></path><path d="M10 34 L26 22" stroke="#6CB4FF" stroke-width="2"></path>
+<text x="38" y="38" fill="#C9CDD2" font-size="9" font-family="JetBrains Mono">X</text><text x="6" y="7" fill="#C9CDD2" font-size="9" font-family="JetBrains Mono">Y</text><text x="27" y="20" fill="#C9CDD2" font-size="9" font-family="JetBrains Mono">Z</text>
+</svg>
+<div style="position: absolute; right: 14px; top: 404px; font-size: 12px; line-height: 16px; color: #A9AFB6">Drag to orbit · pinch to zoom</div>
+</div>
+
+<div style="position: absolute; left: 16px; top: 560px; width: 358px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<div style="height: 60px; box-sizing: border-box; padding: 10px 12px; border-radius: 14px; background: #17191B; border: 1px solid #26292C; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; line-height: 14px; color: #A9AFB6">Width</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 17px; line-height: 22px; font-weight: 700">118.6<span style="font-size: 12px; color: #A9AFB6"> mm</span></span></div>
+<div style="height: 60px; box-sizing: border-box; padding: 10px 12px; border-radius: 14px; background: #17191B; border: 1px solid #26292C; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; line-height: 14px; color: #A9AFB6">Depth</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 17px; line-height: 22px; font-weight: 700">92.4<span style="font-size: 12px; color: #A9AFB6"> mm</span></span></div>
+<div style="height: 60px; box-sizing: border-box; padding: 10px 12px; border-radius: 14px; background: #17191B; border: 1px solid #26292C; display: flex; flex-direction: column; gap: 2px"><span style="font-size: 12px; line-height: 14px; color: #A9AFB6">Height</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 17px; line-height: 22px; font-weight: 700">98.0<span style="font-size: 12px; color: #A9AFB6"> mm</span></span></div>
+</div>
+
+<button style="position: absolute; left: 16px; top: 632px; width: 358px; height: 64px; box-sizing: border-box; padding: 0 14px; border-radius: 14px; background: #17191B; border: 1px solid #26292C; display: flex; align-items: center; gap: 14px; text-align: left; cursor: pointer; font-family: 'Inter Tight', sans-serif; color: #F2F3F4">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17L17 3l4 4L7 21z"></path><path d="M7 13l2 2M10 10l2 2M13 7l2 2"></path></svg>
+<span style="flex-grow: 1; display: flex; flex-direction: column"><span style="font-size: 16px; line-height: 20px; font-weight: 600">Check scale</span><span style="font-size: 13px; line-height: 18px; color: #A9AFB6">Not verified · measure a ruler or coin</span></span>
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#A9AFB6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+</button>
+
+<div style="position: absolute; left: 16px; top: 720px; width: 358px; display: flex; gap: 10px">
+<button style="flex-grow: 1; flex-basis: 0; height: 56px; border-radius: 28px; border: 1px solid #3A3F44; background: transparent; color: #F2F3F4; font-family: 'Inter Tight', sans-serif; font-size: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F2F3F4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 5.7"></path><path d="M20 4v7h-7"></path></svg>High detail</button>
+<button style="flex-grow: 1; flex-basis: 0; height: 56px; border-radius: 28px; border: none; background: {{accent}}; color: #12140A; font-family: 'Inter Tight', sans-serif; font-size: 16px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#12140A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5"></path><path d="M5 15v4a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"></path></svg>Export</button>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4F54A","options":["#D4F54A","#FFD23F","#3EE8B5"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+renderVals() {
+return { accent: this.props.accent ?? '#D4F54A' };
+}
+}
+</script>
+</body>
+</html>

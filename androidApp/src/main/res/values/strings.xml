@@ -1,0 +1,259 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- UI copy from the Facet designs. "Facet" is a placeholder name: keep it only in app_name. -->
+<resources>
+    <string name="app_name">Facet</string>
+
+    <!-- Common -->
+    <string name="action_next">Next</string>
+    <string name="action_skip">Skip</string>
+    <string name="action_back">Back</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_close">Close</string>
+    <string name="action_more">More options</string>
+    <string name="action_settings">Settings</string>
+    <string name="unit_mm">mm</string>
+    <string name="unit_in">in</string>
+    <string name="dims_format">%1$s × %2$s × %3$s %4$s</string>
+
+    <!-- Onboarding -->
+    <string name="onb1_title">Turn real objects into printable models</string>
+    <string name="onb1_body">Walk around an object with your phone. %1$s builds a true-to-scale mesh you can send straight to your slicer or CAD.</string>
+    <string name="onb1_privacy">Everything is processed on this phone. Nothing is uploaded.</string>
+    <string name="onb2_title">For the best scan</string>
+    <string name="tip_light_title">Bright, even light</string>
+    <string name="tip_light_body">Daylight or a lit room. Avoid hard shadows.</string>
+    <string name="tip_matte_title">Matte objects scan best</string>
+    <string name="tip_matte_body">Shiny, clear or black parts may need scanning spray or a dusting of powder.</string>
+    <string name="tip_slow_title">Move slowly</string>
+    <string name="tip_slow_body">Smooth and steady. %1$s will tell you if you\'re too fast.</string>
+    <string name="tip_around_title">Walk all the way around</string>
+    <string name="tip_around_body">Fill the low, mid and high rings. Leave space around the object.</string>
+    <string name="onb3_title">How a scan works</string>
+    <string name="step1_title">Place the box</string>
+    <string name="step1_body">Point at a table, tap the object, and drag the box to fit.</string>
+    <string name="step2_title">Walk around</string>
+    <string name="step2_body">A mesh builds over the object as the coverage rings fill in.</string>
+    <string name="step3_title">Pick your result</string>
+    <string name="step3_body">Quick is ready in seconds. High detail takes a few minutes for finer edges.</string>
+    <string name="step4_title">Check scale and export</string>
+    <string name="step4_body">Confirm size with a ruler or coin, then save STL or 3MF.</string>
+    <string name="onb_get_started">Get started</string>
+    <string name="onb_step_cd">Step %1$d of %2$d</string>
+
+    <!-- Permission & device -->
+    <string name="perm_cam_title">%1$s needs your camera</string>
+    <string name="perm_cam_body">The camera and depth sensor measure your object. Video is processed on this phone and never leaves it.</string>
+    <string name="perm_cam_denied">Turned it off earlier? Allow it in Android Settings.</string>
+    <string name="perm_cam_allow">Allow camera</string>
+    <string name="perm_cam_later">Not now</string>
+    <string name="device_title">Device check</string>
+    <string name="device_update_title">One update needed</string>
+    <string name="device_update_body">%1$s uses Google Play Services for AR for tracking and depth. It\'s free and comes from the Play Store.</string>
+    <string name="device_check_camera">Camera</string>
+    <string name="device_check_camera_ok">Allowed</string>
+    <string name="device_check_depth">Depth support</string>
+    <string name="device_check_depth_ok">ARCore Depth API available</string>
+    <string name="device_check_arcore">Google Play Services for AR</string>
+    <string name="device_check_arcore_update">Update required</string>
+    <string name="device_update_action">Update in Play Store</string>
+    <string name="device_check_again">Check again</string>
+    <string name="unsupported_title">This phone can\'t scan yet</string>
+    <string name="unsupported_body">%1$s needs the ARCore Depth API to measure objects. %2$s doesn\'t support it.</string>
+    <string name="unsupported_card_title">What you can do</string>
+    <string name="unsupported_card_body">Check the list of supported phones. Support depends on Google, not %1$s, so a system update may add it.</string>
+    <string name="unsupported_see_list">See supported phones</string>
+    <string name="unsupported_close">Close app</string>
+
+    <!-- Gallery -->
+    <string name="gallery_search">Search scans</string>
+    <string name="filter_all">All</string>
+    <string name="filter_high">High detail</string>
+    <string name="filter_quick">Quick</string>
+    <string name="filter_processing">Processing</string>
+    <string name="section_today">Today</string>
+    <string name="section_this_week">This week</string>
+    <string name="new_scan">New scan</string>
+    <string name="empty_title">No scans yet</string>
+    <string name="empty_body">Your scans are saved here, on this phone. Start with something small and matte, like a mug or a tool handle.</string>
+    <string name="empty_tips">Scanning tips</string>
+    <string name="chip_high">High detail</string>
+    <string name="chip_quick">Quick</string>
+    <string name="chip_processing">Processing %1$d%%</string>
+    <string name="chip_scale_ok">Scale verified</string>
+    <string name="chip_scale_unchecked">Scale unchecked</string>
+    <string name="act_open">Open</string>
+    <string name="act_reprocess">Reprocess in High detail</string>
+    <string name="act_reprocess_sub">About %1$d min · uses the saved photos</string>
+    <string name="act_export_again">Export again</string>
+    <string name="act_export_again_sub">STL or 3MF</string>
+    <string name="act_rename">Rename</string>
+    <string name="act_delete">Delete</string>
+    <string name="tris_format">%1$s triangles</string>
+
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_general">General</string>
+    <string name="settings_appearance">Appearance</string>
+    <string name="appearance_system">Follow system</string>
+    <string name="appearance_light">Light</string>
+    <string name="appearance_dark">Dark</string>
+    <string name="settings_units">Units</string>
+    <string name="units_mm">Millimetres</string>
+    <string name="units_in">Inches</string>
+    <string name="settings_scanning">Scanning</string>
+    <string name="settings_default_result">Default result</string>
+    <string name="default_result_ask">Ask each time</string>
+    <string name="settings_watertight">Watertight mesh</string>
+    <string name="settings_watertight_sub">Close holes so the model prints</string>
+    <string name="settings_smoothing">Smoothing</string>
+    <string name="smoothing_off">Off</string>
+    <string name="smoothing_low">Low</string>
+    <string name="smoothing_medium">Medium</string>
+    <string name="smoothing_high">High</string>
+    <string name="settings_guidance">Guidance</string>
+    <string name="settings_haptics">Haptic guidance</string>
+    <string name="settings_haptics_sub">Vibration pattern for each message</string>
+    <string name="settings_storage">Storage</string>
+    <string name="storage_scans">%1$d scans</string>
+    <string name="storage_summary">%1$s · %2$s free</string>
+    <string name="storage_models">Models %1$s</string>
+    <string name="storage_photos">Saved photos %1$s</string>
+    <string name="storage_clear_photos">Clear saved photos</string>
+
+    <!-- Placement -->
+    <string name="cd_cancel_scan">Cancel scan</string>
+    <string name="cd_torch">Toggle torch</string>
+    <string name="place_tap_object">Tap the object</string>
+    <string name="place_surface_found">Surface found</string>
+    <string name="place_surface_tip">Leave a hand\'s width of clear space around the object.</string>
+    <string name="place_drag_handles">Drag the handles to fit the box</string>
+    <string name="place_box_size">Box size</string>
+    <string name="place_fit">Fit to object</string>
+    <string name="scan_type_full">Full object</string>
+    <string name="scan_type_full_sub">Walk all the way around. Best for printing.</string>
+    <string name="scan_type_side">One side</string>
+    <string name="scan_type_side_sub">For big or wall-mounted things. Back stays open.</string>
+    <string name="start_scan">Start scan</string>
+
+    <!-- Capture -->
+    <string name="scanning_timer">SCANNING %1$s</string>
+    <string name="coverage">coverage</string>
+    <string name="band_low">LOW</string>
+    <string name="band_mid">MID</string>
+    <string name="band_high">HIGH</string>
+    <string name="cd_pause">Pause scan</string>
+    <string name="cd_resume">Resume scan</string>
+    <string name="cd_mesh">Hide mesh overlay</string>
+    <string name="finish">Finish</string>
+    <string name="cd_dial">Coverage map. Low %1$d%%, mid %2$d%%, high %3$d%%.</string>
+    <string name="g_tracking_lost">Tracking lost</string>
+    <string name="g_tracking_lost_sub">Point back at the object</string>
+    <string name="g_too_close">Too close</string>
+    <string name="g_too_far">Too far</string>
+    <string name="g_move_slower">Move slower</string>
+    <string name="g_more_light">More light needed</string>
+    <string name="g_higher">Capture higher angles</string>
+    <string name="g_lower">Capture lower angles</string>
+    <string name="toast_ring_low">Low angles done</string>
+    <string name="toast_ring_mid">Mid angles done</string>
+    <string name="toast_ring_high">High angles done</string>
+    <string name="tracking_paused_note">Capture is paused until tracking returns. Nothing you\'ve scanned is lost.</string>
+
+    <!-- Finish -->
+    <string name="incomplete_title">High angles missing</string>
+    <string name="incomplete_body">The top may come out open or lumpy. %1$d%% covered.</string>
+    <string name="keep_scanning">Keep scanning</string>
+    <string name="finish_anyway">Finish anyway</string>
+    <string name="incomplete_tip">Scanning something big? Pick One side at placement to skip this check.</string>
+    <string name="mode_title">Choose your result</string>
+    <string name="mode_quick">Quick result</string>
+    <string name="mode_quick_time">Ready in ~%1$d s</string>
+    <string name="mode_quick_body">Good for checking the shape or for simple, chunky objects.</string>
+    <string name="mode_high">High detail</string>
+    <string name="mode_high_time">About %1$d min on this phone</string>
+    <string name="mode_high_body">Finer edges and small features. Best for parts that need to fit.</string>
+    <string name="mode_high_badge">Best for small parts</string>
+    <string name="mode_remember">Remember my choice</string>
+    <string name="action_continue">Continue</string>
+    <string name="mode_note">Photos are kept, so a Quick result can be upgraded later.</string>
+
+    <!-- Interrupted -->
+    <string name="paused_title">Scan paused</string>
+    <string name="paused_body">You left the app at %1$d%%. Your progress is saved.</string>
+    <string name="paused_tip">Point the camera at the same object, in the same spot. %1$s will line up with where you stopped.</string>
+    <string name="resume_scan">Resume scan</string>
+    <string name="finish_with_what_i_have">Finish with what I have</string>
+    <string name="discard_scan">Discard scan</string>
+
+    <!-- Processing -->
+    <string name="proc_time_left">~%1$d min left</string>
+    <string name="stage_align">Aligning photos</string>
+    <string name="stage_depth">Depth maps</string>
+    <string name="stage_mesh">Building fine mesh</string>
+    <string name="stage_cleanup">Cleanup &amp; watertight</string>
+    <string name="stage_of">%1$d of %2$d</string>
+    <string name="proc_notify">Notify me and leave</string>
+    <string name="proc_cancel">Cancel processing</string>
+    <string name="proc_footer">Runs on this phone. You can use other apps meanwhile.</string>
+    <string name="notif_channel_processing">Processing</string>
+    <string name="notif_processing">Processing %1$s · %2$d%%</string>
+    <string name="notif_ready">%1$s is ready</string>
+    <string name="fail_title">High detail couldn\'t finish</string>
+    <string name="fail_body_memory">The phone ran out of memory while building the fine mesh (step %1$d of %2$d). Your scan and photos are safe.</string>
+    <string name="fail_help_title">Things that help</string>
+    <string name="fail_help_body">• Close other apps, then try again\n• Let the phone cool down if it\'s warm\n• Crop the box tighter to just the object</string>
+    <string name="try_again">Try again</string>
+    <string name="use_quick">Use Quick result</string>
+    <string name="copy_error">Copy error details</string>
+
+    <!-- Viewer -->
+    <string name="viewer_shaded">Shaded</string>
+    <string name="viewer_wireframe">Wireframe</string>
+    <string name="cd_reset_view">Reset view</string>
+    <string name="viewer_hint">Drag to orbit · pinch to zoom</string>
+    <string name="dim_width">Width</string>
+    <string name="dim_depth">Depth</string>
+    <string name="dim_height">Height</string>
+    <string name="check_scale">Check scale</string>
+    <string name="scale_not_verified">Not verified · measure a ruler or coin</string>
+    <string name="scale_verified_against">Verified against %1$s</string>
+    <string name="btn_high_detail">High detail</string>
+    <string name="btn_export">Export</string>
+    <string name="result_quick_tris">Quick result · %1$s triangles</string>
+    <string name="result_high_tris">High detail · %1$s triangles</string>
+
+    <!-- Scale check -->
+    <string name="coin_found">Coin found</string>
+    <string name="scale_reference">Reference</string>
+    <string name="scale_in_scan">In the scan</string>
+    <string name="scale_correction">Correction</string>
+    <string name="scale_new_size">New size: %1$s</string>
+    <string name="apply_scale">Apply scale</string>
+    <string name="measure_manually">Measure manually instead</string>
+    <string name="scale_tap_two">Tap two points on a known edge</string>
+    <string name="scale_real_length">Real length between the points</string>
+    <string name="scale_measured">Measured %1$s</string>
+    <string name="reset_points">Reset points</string>
+    <string name="scale_none_found">No coin found. Measure a known edge instead.</string>
+
+    <!-- Export -->
+    <string name="export_title">Export</string>
+    <string name="file_name">File name</string>
+    <string name="fmt_stl">STL</string>
+    <string name="fmt_stl_body">Mesh only, in millimetres. Works everywhere.</string>
+    <string name="fmt_3mf">3MF</string>
+    <string name="fmt_3mf_body">Keeps units and name. Best for Bambu Studio, PrusaSlicer.</string>
+    <string name="fmt_more">OBJ · PLY · GLB · USDZ</string>
+    <string name="fmt_more_later">Coming later</string>
+    <string name="save">Save</string>
+    <string name="share">Share</string>
+    <string name="saved_to">Saved to %1$s</string>
+    <string name="open">Open</string>
+
+    <!-- Low storage -->
+    <string name="low_storage_title">Not enough space for High detail</string>
+    <string name="low_storage_body">High detail needs about %1$s while it works. This phone has %2$s free.</string>
+    <string name="low_storage_photos">Saved photos from older scans use %1$s.</string>
+    <string name="free_up_space">Free up space</string>
+    <string name="keep_quick">Keep Quick result</string>
+</resources>

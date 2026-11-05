@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Phase 0 navigation stubs only. Delete this file when the real screens land (Phase 1+). -->
+<resources>
+    <string name="stub_note" translatable="false">Stub screen · reference: %1$s</string>
+    <string name="stub_wiring" translatable="false">Wiring check</string>
+    <string name="stub_wiring_failed" translatable="false">Native core failed to load: %1$s</string>
+    <string name="stub_device_supported" translatable="false">Simulate: supported → Gallery</string>
+    <string name="stub_device_unsupported" translatable="false">Simulate: unsupported</string>
+    <string name="stub_open_sample" translatable="false">Open sample scan (viewer)</string>
+    <string name="stub_open_processing" translatable="false">Open processing scan</string>
+    <string name="stub_scan_states" translatable="false">FindingSurface → PlacingBox → Capturing ⇄ Paused → Finishing</string>
+    <string name="stub_processing_done" translatable="false">Simulate: processing done</string>
+    <string name="stub_processing_failed" translatable="false">Simulate: processing failed</string>
+    <string name="stub_scan_title" translatable="false">Scan</string>
+    <string name="stub_processing_title" translatable="false">Processing · %1$s</string>
+    <string name="stub_viewer_title" translatable="false">Viewer · %1$s</string>
+</resources>
