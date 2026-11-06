@@ -13,6 +13,13 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.displayCutout
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.union
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -27,9 +34,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -41,9 +48,8 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,6 +66,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -104,11 +111,13 @@ fun PrimaryButton(
     modifier: Modifier = Modifier,
     @DrawableRes icon: Int? = null,
     enabled: Boolean = true,
+    /** 56 dp in the app; scan screens pass [Sizes.touchMinAr]. Grows with the text either way. */
+    minHeight: Dp = Sizes.button,
 ) {
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.heightIn(min = Sizes.button),
+        modifier = modifier.heightIn(min = minHeight),
         colors = ButtonDefaults.buttonColors(
             containerColor = Facet.colors.accent,
             contentColor = Facet.colors.onAccent,
@@ -126,11 +135,12 @@ fun OutlineButton(
     modifier: Modifier = Modifier,
     @DrawableRes icon: Int? = null,
     enabled: Boolean = true,
+    minHeight: Dp = Sizes.button,
 ) {
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.heightIn(min = Sizes.button),
+        modifier = modifier.heightIn(min = minHeight),
         border = BorderStroke(1.dp, Facet.colors.textMuted),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = Facet.colors.text),
         contentPadding = PaddingValues(horizontal = Space.l, vertical = Space.s),
@@ -153,18 +163,23 @@ fun TextLinkButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     color: Color = Facet.colors.text,
+    minHeight: Dp = Sizes.buttonText,
 ) {
-    TextButton(onClick = onClick, modifier = modifier.heightIn(min = Sizes.buttonText)) {
+    TextButton(onClick = onClick, modifier = modifier.heightIn(min = minHeight)) {
         Text(
             text,
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
             color = color,
             textDecoration = TextDecoration.Underline,
+            textAlign = TextAlign.Center,
         )
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * App bar: back, title (+ subtitle), actions. Grows with the text instead of Material's fixed
+ * 64 dp, so a two-line title at 200 % font doesn't spill into the status bar.
+ */
 @Composable
 fun FacetTopBar(
     title: String,
@@ -172,31 +187,40 @@ fun FacetTopBar(
     subtitle: String? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
-    TopAppBar(
-        title = {
-            Column {
-                Text(title, style = MaterialTheme.typography.titleLarge, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                if (subtitle != null) {
-                    Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = Facet.colors.textMuted, maxLines = 1)
-                }
-            }
-        },
-        navigationIcon = {
+    CompositionLocalProvider(LocalContentColor provides Facet.colors.text) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Facet.colors.bg)
+                .windowInsetsPadding(WindowInsets.statusBars.union(WindowInsets.displayCutout).only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+                .heightIn(min = 64.dp)
+                .padding(horizontal = Space.xxs),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             if (onBack != null) {
                 IconButton(onClick = onBack) {
                     Icon(painterResource(R.drawable.ic_arrow_back), contentDescription = stringResource(R.string.action_back))
                 }
+                Spacer(Modifier.width(Space.xxs))
+            } else {
+                Spacer(Modifier.width(Space.s))
             }
-        },
-        actions = actions,
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = Facet.colors.bg,
-            scrolledContainerColor = Facet.colors.bg,
-            titleContentColor = Facet.colors.text,
-            navigationIconContentColor = Facet.colors.text,
-            actionIconContentColor = Facet.colors.text,
-        ),
-    )
+            Column(Modifier.weight(1f).padding(vertical = Space.xs)) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleLarge,
+                    color = Facet.colors.text,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.semantics { heading() },
+                )
+                if (subtitle != null) {
+                    Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = Facet.colors.textMuted, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                }
+            }
+            Row(verticalAlignment = Alignment.CenterVertically, content = actions)
+        }
+    }
 }
 
 /** Large rounded icon tile at the top of full-page screens (permission, unsupported, …). */
@@ -270,39 +294,55 @@ fun ListGroup(modifier: Modifier = Modifier, content: @Composable ColumnScope.()
 @Composable
 fun ListDivider() = HorizontalDivider(thickness = 1.dp, color = Facet.colors.border)
 
-/** 56 dp navigation row: label, value, chevron. */
+/**
+ * 56 dp navigation row: label, value, chevron. Without [onClick] it is a plain label/value row
+ * (no chevron) read as one item. At large font sizes the value moves under the label.
+ */
 @Composable
-fun NavRow(label: String, value: String?, onClick: () -> Unit, valueMono: Boolean = false) {
+fun NavRow(label: String, value: String?, onClick: (() -> Unit)?, valueMono: Boolean = false) {
+    val valueStyle = if (valueMono) Facet.type.dataMono else MaterialTheme.typography.bodyMedium
     Row(
         modifier = Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
-            .clickable(onClick = onClick, role = Role.Button)
+            .then(
+                if (onClick != null) Modifier.clickable(onClick = onClick, role = Role.Button)
+                else Modifier.semantics(mergeDescendants = true) {},
+            )
             .padding(horizontal = Space.m, vertical = Space.s),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(label, style = MaterialTheme.typography.bodyLarge, color = Facet.colors.text, modifier = Modifier.weight(1f))
-        if (value != null) {
-            Text(
-                value,
-                style = if (valueMono) Facet.type.dataMono else MaterialTheme.typography.bodyMedium,
-                color = Facet.colors.textMuted,
-                textAlign = TextAlign.End,
-                // At most half the row, so a long value (or a large font scale) can't squeeze the label.
-                modifier = Modifier
-                    .padding(start = Space.s)
-                    .layout { measurable, constraints ->
-                        val p = measurable.measure(constraints.copy(maxWidth = constraints.maxWidth / 2))
-                        layout(p.width, p.height) { p.place(0, 0) }
-                    },
+        if (isLargeFont()) {
+            Column(Modifier.weight(1f)) {
+                Text(label, style = MaterialTheme.typography.bodyLarge, color = Facet.colors.text)
+                if (value != null) Text(value, style = valueStyle, color = Facet.colors.textMuted)
+            }
+        } else {
+            Text(label, style = MaterialTheme.typography.bodyLarge, color = Facet.colors.text, modifier = Modifier.weight(1f))
+            if (value != null) {
+                Text(
+                    value,
+                    style = valueStyle,
+                    color = Facet.colors.textMuted,
+                    textAlign = TextAlign.End,
+                    // At most half the row, so a long value can't squeeze the label.
+                    modifier = Modifier
+                        .padding(start = Space.s)
+                        .layout { measurable, constraints ->
+                            val p = measurable.measure(constraints.copy(maxWidth = constraints.maxWidth / 2))
+                            layout(p.width, p.height) { p.place(0, 0) }
+                        },
+                )
+            }
+        }
+        if (onClick != null) {
+            Icon(
+                painterResource(R.drawable.ic_chevron_right),
+                contentDescription = null,
+                tint = Facet.colors.textMuted,
+                modifier = Modifier.padding(start = Space.xs).size(20.dp),
             )
         }
-        Icon(
-            painterResource(R.drawable.ic_chevron_right),
-            contentDescription = null,
-            tint = Facet.colors.textMuted,
-            modifier = Modifier.padding(start = Space.xs).size(20.dp),
-        )
     }
 }
 
@@ -352,7 +392,11 @@ fun SegmentedControl(
     container: Color = Facet.colors.surface2,
     /** true = segments share the full width equally (pass a fillMaxWidth modifier). */
     equalWidth: Boolean = false,
+    /** Touch height of each segment: 48 dp in the app, [Sizes.touchMinAr] on scan screens. */
+    segmentHeight: Dp = Sizes.touchMin,
 ) {
+    // Labels may shrink to what 12 sp looks like at 100 %, so "Medium" still fits four-up at 200 %.
+    val minLabel = (12f / LocalDensity.current.fontScale).coerceAtMost(12f).sp
     Row(
         modifier = modifier
             .clip(CircleShape)
@@ -366,7 +410,7 @@ fun SegmentedControl(
             Box(
                 modifier = Modifier
                     .then(if (equalWidth) Modifier.weight(1f) else Modifier)
-                    .heightIn(min = 44.dp)
+                    .heightIn(min = segmentHeight)
                     .clip(CircleShape)
                     .background(if (selected) Facet.colors.text else Color.Transparent)
                     .selectable(selected = selected, onClick = { onSelect(i) }, role = Role.Tab)
@@ -377,7 +421,7 @@ fun SegmentedControl(
                     label,
                     style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                     color = if (selected) Facet.colors.bg else Facet.colors.text,
-                    minSize = 12.sp,
+                    minSize = minLabel,
                 )
             }
         }

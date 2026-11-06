@@ -2,12 +2,12 @@
 SHELL := /bin/bash
 IOS_DERIVED := iosApp/build
 
-.PHONY: help android install test test-shared test-native xcodeproj ios clean
+.PHONY: help android install test test-shared test-android test-native xcodeproj ios clean
 
 help:
 	@echo "make android      Build the Android debug APK"
 	@echo "make install      Build and install the debug APK on the connected phone (adb)"
-	@echo "make test         Shared Kotlin tests (Android JVM + iOS Simulator) and C++ core tests"
+	@echo "make test         Shared Kotlin tests (Android JVM + iOS Simulator), Android unit tests and C++ core tests"
 	@echo "make ios          Generate the Xcode project and build the iOS app for the Simulator"
 	@echo "make xcodeproj    Regenerate iosApp/iosApp.xcodeproj from project.yml (XcodeGen)"
 	@echo "make clean        Remove build outputs"
@@ -18,10 +18,14 @@ android:
 install:
 	./gradlew :androidApp:installDebug
 
-test: test-shared test-native
+test: test-shared test-android test-native
 
 test-shared:
 	./gradlew :shared:allTests
+
+# Android JVM unit tests (WCAG contrast of the design tokens).
+test-android:
+	./gradlew :androidApp:testDebugUnitTest
 
 # Host build of native/ with the CMake bundled in the Android SDK.
 SDK_DIR := $(shell sed -n 's/^sdk.dir=//p' local.properties 2>/dev/null)

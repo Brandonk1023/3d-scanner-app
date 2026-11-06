@@ -201,9 +201,10 @@ data class ScanTuning(
         val minSharpness: Double = 100.0, // TODO(Phase 3): variance-of-Laplacian threshold, calibrate on device
     )
 
+    /** Free-space checks. Decimal (SI) units throughout, like Android's own storage screens and [app.facet.format.formatBytes]. */
     data class Storage(
         val minFreeToStartScanBytes: Long = 500L * MB,
-        val highDetailEstimateBytes: Long = 2_048L * MB,
+        val highDetailEstimateBytes: Long = 2_000L * MB,
     )
 
     /**
@@ -287,7 +288,8 @@ data class ScanTuning(
     }
 
     companion object {
-        private const val MB = 1024L * 1024L
+        /** Decimal megabyte, matching [app.facet.format.formatBytes]. */
+        private const val MB = 1_000_000L
         val Default = ScanTuning()
     }
 }

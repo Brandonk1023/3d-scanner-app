@@ -10,12 +10,15 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -54,6 +57,7 @@ import app.facet.android.ui.components.OutlineButton
 import app.facet.android.ui.components.PrimaryButton
 import app.facet.android.ui.components.RenameDialog
 import app.facet.android.ui.components.SegmentedControl
+import app.facet.android.ui.components.isLargeFont
 import app.facet.android.ui.components.resultSubtitle
 import app.facet.android.ui.components.unitLabel
 import app.facet.android.ui.mesh.DimensionLabels
@@ -108,10 +112,14 @@ fun ViewerScreen(
             }
         },
     ) { padding ->
+        // At large font sizes the tiles and buttons need the room: the page scrolls and the
+        // viewport keeps a fixed height instead of taking what's left.
+        val largeFont = isLargeFont()
         Column(
             Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .then(if (largeFont) Modifier.verticalScroll(rememberScrollState()) else Modifier)
                 .navigationBarsPadding()
                 .padding(horizontal = Space.m)
                 .padding(bottom = Space.m),
@@ -121,8 +129,7 @@ fun ViewerScreen(
             val shape = RoundedCornerShape(Radius.panel)
             Box(
                 Modifier
-                    .weight(1f)
-                    .heightIn(min = 220.dp)
+                    .then(if (largeFont) Modifier.height(360.dp) else Modifier.weight(1f).heightIn(min = 220.dp))
                     .fillMaxWidth()
                     .clip(shape)
                     .background(Facet.colors.surface)
@@ -160,12 +167,18 @@ fun ViewerScreen(
                 ) {
                     Icon(painterResource(R.drawable.ic_cube), stringResource(R.string.cd_reset_view), tint = Facet.colors.text)
                 }
-                Text(
-                    stringResource(R.string.viewer_hint),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Facet.colors.textMuted,
-                    modifier = Modifier.align(Alignment.BottomEnd).padding(Space.m),
-                )
+                if (!largeFont) {
+                    Text(
+                        stringResource(R.string.viewer_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Facet.colors.textMuted,
+                        modifier = Modifier.align(Alignment.BottomEnd).padding(Space.m),
+                    )
+                }
+            }
+            // Large text would cover the dimension labels and axes, so the hint moves under the viewport.
+            if (largeFont) {
+                Text(stringResource(R.string.viewer_hint), style = MaterialTheme.typography.bodySmall, color = Facet.colors.textMuted)
             }
 
             // W / D / H tiles

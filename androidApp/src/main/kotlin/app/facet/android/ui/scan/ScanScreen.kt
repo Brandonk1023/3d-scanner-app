@@ -28,11 +28,11 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.State
@@ -51,33 +51,41 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import app.facet.android.R
 import app.facet.android.AppContainer
+import app.facet.android.R
 import app.facet.android.appContainer
 import app.facet.android.ar.ArController
 import app.facet.android.ar.ArEvent
 import app.facet.android.ar.ArFrameSnapshot
 import app.facet.android.ar.ArStatus
+import app.facet.android.ar.CaptureEngine
+import app.facet.android.ar.MediaPipeSegmenter
 import app.facet.android.ar.PlaneFrame
 import app.facet.android.ar.Projector
 import app.facet.android.ar.TrackingFailure
+import app.facet.android.ui.components.BusyIndicator
 import app.facet.android.ui.components.FitText
 import app.facet.android.ui.components.InfoDialog
 import app.facet.android.ui.components.PrimaryButton
@@ -89,26 +97,24 @@ import app.facet.android.ui.theme.Radius
 import app.facet.android.ui.theme.Sizes
 import app.facet.android.ui.theme.Space
 import app.facet.format.formatBytes
+import app.facet.format.formatBytesAbout
 import app.facet.geometry.Vec3
 import app.facet.scan.BoxAxis
 import app.facet.scan.PlacedBox
+import app.facet.scan.ResultMode
+import app.facet.scan.ScanTuning
 import app.facet.scan.ScanType
 import app.facet.scan.TrackingState
 import app.facet.ui.scan.PlacementStage
 import app.facet.ui.scan.PlacementUiState
 import app.facet.ui.scan.PlacementViewModel
 import app.facet.ui.scan.ScanSetup
-import app.facet.scan.ResultMode
-import app.facet.scan.ScanTuning
-import app.facet.android.ar.CaptureEngine
-import app.facet.android.ar.MediaPipeSegmenter
-import androidx.compose.runtime.DisposableEffect
+import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
-import kotlin.math.roundToInt
+import kotlinx.coroutines.withContext
 
 /**
  * The `scan` route: placement — Find surface (Placement-Surface.png) and Fit box
@@ -227,7 +233,7 @@ fun ScanScreen(onClose: () -> Unit, onResult: (scanId: String, mode: ResultMode)
             title = stringResource(R.string.scan_low_storage_title),
             body = {
                 Text(
-                    stringResource(R.string.scan_low_storage_body, formatBytes(low.neededBytes), formatBytes(low.freeBytes)),
+                    stringResource(R.string.scan_low_storage_body, formatBytesAbout(low.neededBytes), formatBytes(low.freeBytes)),
                     color = Facet.colors.textMuted,
                 )
             },
@@ -275,9 +281,25 @@ private fun PlacementLayer(
         }
 
         // Tap to place (or re-place on another object) and two-finger rotate (Fit box).
+        // TalkBack can't tap a spot on the camera image, so it gets "place on what's in the centre".
+        var viewSize by remember { mutableStateOf(IntSize.Zero) }
+        val cameraDescription = stringResource(R.string.cd_camera_view)
+        val placeCentre = stringResource(R.string.a11y_place_centre)
         Box(
             Modifier
                 .fillMaxSize()
+                .onSizeChanged { viewSize = it }
+                .semantics {
+                    contentDescription = cameraDescription
+                    if (status is ArStatus.Running) {
+                        customActions = listOf(
+                            CustomAccessibilityAction(placeCentre) {
+                                ar.placeAt(viewSize.width / 2f, viewSize.height / 2f)
+                                true
+                            },
+                        )
+                    }
+                }
                 .pointerInput(Unit) { detectTapGestures { ar.placeAt(it.x, it.y) } }
                 .pointerInput(stage) {
                     if (stage == PlacementStage.FITTING_BOX) {
@@ -291,23 +313,22 @@ private fun PlacementLayer(
 
         if (stage == PlacementStage.FITTING_BOX && box != null) BoxHandles(frames, box, vm)
 
-        TopControls(
-            torchOn = state.torchOn,
-            onClose = onClose,
-            onTorch = vm::toggleTorch,
-            onStartOver = if (stage == PlacementStage.FITTING_BOX) startOver else null,
-            modifier = Modifier.align(Alignment.TopCenter),
-        )
-
-        if (status is ArStatus.Running) {
-            val banner = bannerFor(state, tracking, failure, boxVisible, notice)
-            Box(
-                Modifier
-                    .align(Alignment.TopCenter)
-                    .statusBarsPadding()
-                    .padding(top = 84.dp, start = Space.m, end = Space.m),
-            ) {
-                ArBanner(banner)
+        // Controls, then the banner under them: laid out together so a taller banner (large
+        // font) pushes down instead of overlapping.
+        Column(
+            Modifier.align(Alignment.TopCenter).fillMaxWidth().statusBarsPadding(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            TopControls(
+                torchOn = state.torchOn,
+                onClose = onClose,
+                onTorch = vm::toggleTorch,
+                onStartOver = if (stage == PlacementStage.FITTING_BOX) startOver else null,
+            )
+            if (status is ArStatus.Running) {
+                Box(Modifier.padding(start = Space.m, end = Space.m, top = Space.xs)) {
+                    ArBanner(bannerFor(state, tracking, failure, boxVisible, notice))
+                }
             }
         }
 
@@ -407,19 +428,39 @@ private fun BoxHandles(frames: State<ArFrameSnapshot?>, box: PlacedBox, vm: Plac
             vm.resize(axis, side, (delta.x * v.x + delta.y * v.y) / len2 * 10.0)
         }
 
+        // TalkBack actions: grow or shrink a face by A11Y_NUDGE_MM, turn the box by A11Y_TURN_DEG.
+        fun nudge(kind: HandleKind, sign: Int) {
+            when (kind) {
+                HandleKind.TOP -> vm.resize(BoxAxis.HEIGHT, 1, sign * A11Y_NUDGE_MM)
+                HandleKind.SIDE_PLUS -> vm.resize(layout.sideAxis, 1, sign * A11Y_NUDGE_MM)
+                HandleKind.SIDE_MINUS -> vm.resize(layout.sideAxis, -1, sign * A11Y_NUDGE_MM)
+                HandleKind.MOVE -> vm.rotate(sign * A11Y_TURN_DEG)
+            }
+        }
+
         layout.screen.forEach { (kind, position) ->
             key(kind) {
-                Handle(kind, position, onStart = { start(kind) }, onDrag = ::move, onEnd = { drag = null })
+                Handle(kind, position, onStart = { start(kind) }, onDrag = ::move, onEnd = { drag = null }, onNudge = { nudge(kind, it) })
             }
         }
     }
 }
 
 private const val MIN_AXIS_PX = 1.5f
+private const val A11Y_NUDGE_MM = 10.0
+private const val A11Y_TURN_DEG = 15.0
 
 @Composable
-private fun Handle(kind: HandleKind, position: Offset, onStart: () -> Unit, onDrag: (Offset) -> Unit, onEnd: () -> Unit) {
-    val touch = Sizes.touchMin
+private fun Handle(
+    kind: HandleKind,
+    position: Offset,
+    onStart: () -> Unit,
+    onDrag: (Offset) -> Unit,
+    onEnd: () -> Unit,
+    /** +1 = bigger (or turn left for the move handle), -1 = smaller (turn right). */
+    onNudge: (Int) -> Unit,
+) {
+    val touch = Sizes.touchMinAr
     val touchPx = with(LocalDensity.current) { touch.toPx() }
     val description = stringResource(
         when (kind) {
@@ -428,6 +469,12 @@ private fun Handle(kind: HandleKind, position: Offset, onStart: () -> Unit, onDr
             else -> R.string.cd_handle_side
         },
     )
+    val (growLabel, shrinkLabel) = when (kind) {
+        HandleKind.TOP -> stringResource(R.string.a11y_taller) to stringResource(R.string.a11y_shorter)
+        HandleKind.MOVE -> stringResource(R.string.a11y_turn_left) to stringResource(R.string.a11y_turn_right)
+        else -> stringResource(R.string.a11y_wider) to stringResource(R.string.a11y_narrower)
+    }
+    val currentNudge by rememberUpdatedState(onNudge)
     val currentStart by rememberUpdatedState(onStart)
     val currentDrag by rememberUpdatedState(onDrag)
     val currentEnd by rememberUpdatedState(onEnd)
@@ -436,7 +483,13 @@ private fun Handle(kind: HandleKind, position: Offset, onStart: () -> Unit, onDr
         modifier = Modifier
             .offset { IntOffset((position.x - touchPx / 2).roundToInt(), (position.y - touchPx / 2).roundToInt()) }
             .size(touch)
-            .semantics { contentDescription = description }
+            .semantics {
+                contentDescription = description
+                customActions = listOf(
+                    CustomAccessibilityAction(growLabel) { currentNudge(1); true },
+                    CustomAccessibilityAction(shrinkLabel) { currentNudge(-1); true },
+                )
+            }
             .pointerInput(kind) {
                 detectDragGestures(
                     onDragStart = { currentStart() },
@@ -505,7 +558,8 @@ private fun bannerFor(
 @Composable
 private fun ArBanner(banner: Banner) {
     val text = stringResource(banner.text)
-    val live = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+    // One item, re-announced politely whenever the message changes.
+    val live = Modifier.semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
     when (banner.style) {
         BannerStyle.ADVICE -> Box(
             live
@@ -550,12 +604,10 @@ private fun TopControls(
     onClose: () -> Unit,
     onTorch: () -> Unit,
     onStartOver: (() -> Unit)?,
-    modifier: Modifier = Modifier,
 ) {
     Row(
-        modifier
+        Modifier
             .fillMaxWidth()
-            .statusBarsPadding()
             .padding(horizontal = Space.m, vertical = Space.xs),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -573,7 +625,7 @@ private fun TopControls(
 private fun GlassIconButton(@DrawableRes icon: Int, description: String, onClick: () -> Unit, active: Boolean = false) {
     Box(
         Modifier
-            .size(Sizes.touchMin)
+            .size(Sizes.touchMinAr)
             .clip(CircleShape)
             .background(if (active) Color.White else ArColors.glass)
             .border(1.dp, ArColors.glassBorder, CircleShape)
@@ -596,7 +648,7 @@ private fun Modifier.glassPanel() = this
 @Composable
 private fun SurfaceFoundCard() {
     Row(
-        Modifier.glassPanel().padding(20.dp),
+        Modifier.glassPanel().semantics(mergeDescendants = true) {}.padding(20.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Space.m),
     ) {
@@ -620,7 +672,7 @@ private fun PlacementPanel(
 ) {
     Column(Modifier.glassPanel().padding(20.dp), verticalArrangement = Arrangement.spacedBy(Space.m)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Column(Modifier.weight(1f)) {
+            Column(Modifier.weight(1f).semantics(mergeDescendants = true) {}) {
                 Text(stringResource(R.string.place_box_size), style = MaterialTheme.typography.bodyMedium, color = ArColors.textSecondary)
                 FitText(
                     boxSizeText(box.size, state.units),
@@ -640,6 +692,7 @@ private fun PlacementPanel(
             modifier = Modifier.fillMaxWidth(),
             container = Color.White.copy(alpha = 0.08f),
             equalWidth = true,
+            segmentHeight = Sizes.touchMinAr,
         )
         Text(
             stringResource(if (state.scanType == ScanType.ONE_SIDE) R.string.scan_type_side_sub else R.string.scan_type_full_sub),
@@ -650,7 +703,8 @@ private fun PlacementPanel(
             text = stringResource(R.string.start_scan),
             onClick = onStart,
             icon = R.drawable.ic_play,
-            modifier = Modifier.fillMaxWidth().height(Sizes.finishHeight),
+            modifier = Modifier.fillMaxWidth(),
+            minHeight = Sizes.finishHeight,
         )
     }
 }
@@ -659,7 +713,7 @@ private fun PlacementPanel(
 private fun FitButton(fitting: Boolean, onClick: () -> Unit) {
     Row(
         Modifier
-            .heightIn(min = Sizes.touchMin)
+            .heightIn(min = Sizes.touchMinAr)
             .clip(CircleShape)
             .border(1.dp, Color.White.copy(alpha = 0.3f), CircleShape)
             .clickable(enabled = !fitting, role = Role.Button, onClick = onClick)
@@ -668,7 +722,7 @@ private fun FitButton(fitting: Boolean, onClick: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(Space.xs),
     ) {
         if (fitting) {
-            CircularProgressIndicator(Modifier.size(18.dp), color = Color.White, strokeWidth = 2.dp)
+            BusyIndicator(Color.White, Modifier.size(18.dp), strokeWidth = 2.dp)
         } else {
             Icon(painterResource(R.drawable.ic_fit), null, tint = Color.White, modifier = Modifier.size(20.dp))
         }
@@ -685,13 +739,13 @@ private fun ArErrorCard(reason: ArStatus.Reason, onClose: () -> Unit, modifier: 
             .padding(Space.l),
         verticalArrangement = Arrangement.spacedBy(Space.s),
     ) {
-        Text(stringResource(R.string.ar_error_title), style = MaterialTheme.typography.titleLarge, color = Color.White)
+        Text(stringResource(R.string.ar_error_title), style = MaterialTheme.typography.titleLarge, color = Color.White, modifier = Modifier.semantics { heading() })
         Text(
             stringResource(if (reason == ArStatus.Reason.CAMERA_UNAVAILABLE) R.string.ar_error_camera else R.string.ar_error_ar),
             style = MaterialTheme.typography.bodyMedium,
             color = ArColors.textSecondary,
         )
         Spacer(Modifier.height(Space.xs))
-        PrimaryButton(stringResource(R.string.action_close), onClose, Modifier.fillMaxWidth())
+        PrimaryButton(stringResource(R.string.action_close), onClose, Modifier.fillMaxWidth(), minHeight = Sizes.touchMinAr)
     }
 }

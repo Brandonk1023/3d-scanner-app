@@ -43,6 +43,11 @@ android {
         compose = true
     }
 
+    // ContrastTest reads the shared design tokens.
+    testOptions {
+        unitTests.all { it.systemProperty("facet.tokens", rootProject.file("design/tokens/tokens.json").path) }
+    }
+
     // MediaPipe memory-maps its model: keep it uncompressed in the APK.
     androidResources {
         noCompress += "tflite"
@@ -75,6 +80,9 @@ dependencies {
 
     // Settings › About › Open-source licences (Gradle dependencies, collected by the plugin above).
     implementation(libs.play.services.oss.licenses)
+
+    // JVM unit tests (WCAG contrast of the colour tokens).
+    testImplementation(libs.junit)
 }
 
 // ---------------------------------------------------------------------------------------------

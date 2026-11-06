@@ -54,3 +54,9 @@ fun formatBytes(bytes: Long): String {
         else -> formatFixed(b / 1e9, 1) + " GB"
     }
 }
+
+/**
+ * A rough size for "about …" sentences: like [formatBytes] but without a trailing ".0",
+ * so 2,000,000,000 bytes reads "2 GB" (the bar next to it keeps "~2.0 GB").
+ */
+fun formatBytesAbout(bytes: Long): String = formatBytes(bytes).replace(".0 ", " ")

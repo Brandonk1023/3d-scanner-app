@@ -3,6 +3,7 @@ package app.facet.scan
 import app.facet.geometry.BoxSize
 import app.facet.geometry.Vec3
 import app.facet.platform.HapticsPlayer
+import app.facet.settings.AppSettings
 import app.facet.settings.DefaultResult
 import app.facet.settings.InMemorySettingsRepository
 import app.facet.ui.scan.CaptureFrame
@@ -25,6 +26,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -171,6 +173,33 @@ class CaptureTest {
         vm.chooseResult(ResultMode.QUICK, remember = true)
         assertEquals(ResultMode.QUICK, vm.state.value.finished)
         assertEquals(DefaultResult.QUICK, settings.settings.first().defaultResult)
+    }
+
+    /** Settings › Guidance › Haptic guidance off silences guidance patterns and scan feedback alike. */
+    @Test
+    fun hapticGuidanceOffSilencesEveryVibration() = runTest {
+        val settings = InMemorySettingsRepository(AppSettings(hapticGuidance = false))
+        val haptics = RecordingHaptics()
+        val vm = CaptureViewModel(ScanSetup(box, ScanType.FULL_OBJECT), settings, haptics)
+        var t = 0L
+        fun walk(steps: Int, degPerFrame: Double, tracking: TrackingState = TrackingState.TRACKING) {
+            repeat(steps) { step ->
+                t += 33_000_000
+                vm.onFrame(CaptureFrame(t, tracking, cameraAt(15.0, step * degPerFrame + 0.25), 1f, 0.6f, anchorTracking = true))
+                vm.onDepthFused(0.9f)
+            }
+        }
+        // Too fast (Move slower), tracking lost, then a full low ring (segment ticks + ring complete).
+        walk(60, 5.0)
+        walk(120, 0.5, TrackingState.NOT_TRACKING)
+        walk(720, 0.5)
+        assertNotNull(vm.state.value.toast, "the ring completed, so feedback would have played")
+        assertTrue(haptics.played.isEmpty(), "played ${haptics.played}")
+
+        // Switching it back on mid-scan takes effect straight away.
+        settings.update { it.copy(hapticGuidance = true) }
+        walk(60, 5.0)
+        assertTrue(GuidanceMessage.MOVE_SLOWER in haptics.played)
     }
 
     @Test

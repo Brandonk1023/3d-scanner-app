@@ -1,6 +1,8 @@
 package app.facet.ui
 
 import app.facet.data.FakeScanRepository
+import app.facet.format.formatBytes
+import app.facet.format.formatBytesAbout
 import app.facet.platform.BackgroundProcessor
 import app.facet.platform.FailureReason
 import app.facet.platform.ProcessingProgress
@@ -99,6 +101,9 @@ class ProcessingTest {
         val low = assertNotNull(s.lowStorage)
         assertEquals(gb, low.freeBytes)
         assertEquals(ScanTuning.Default.storage.highDetailEstimateBytes, low.neededBytes)
+        // Low-Storage.png: "High detail needs about 2 GB while it works" and the bar's "needs ~2.0 GB".
+        assertEquals("2 GB", formatBytesAbout(low.neededBytes))
+        assertEquals("2.0 GB", formatBytes(low.neededBytes))
         assertEquals(others, low.reclaimableBytes)
         assertTrue(processor.started.isEmpty())
         assertNull(repo.scan(id).first()!!.processingPercent)

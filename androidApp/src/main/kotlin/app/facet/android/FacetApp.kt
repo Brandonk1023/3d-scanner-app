@@ -106,7 +106,7 @@ class DebugFlags {
     fun consumeFailNext(): Boolean = failNextHighDetail.also { failNextHighDetail = false }
 
     companion object {
-        const val LOW_STORAGE_BYTES = 1_200L * 1024 * 1024
+        const val LOW_STORAGE_BYTES = 1_200_000_000L // decimal, like ScanTuning.Storage
     }
 }
 

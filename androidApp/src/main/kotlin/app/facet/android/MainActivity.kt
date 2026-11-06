@@ -11,16 +11,22 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import app.facet.android.nav.FacetNavHost
 import app.facet.android.processing.DeepLink
 import app.facet.android.processing.ProcessingNotifications
+import app.facet.android.ui.components.GatedHapticFeedback
+import app.facet.android.ui.components.LocalReducedMotion
+import app.facet.android.ui.components.rememberSystemReducedMotion
 import app.facet.android.ui.theme.Facet
 import app.facet.android.ui.theme.FacetTheme
 import app.facet.android.ui.theme.isDarkTheme
@@ -69,14 +75,21 @@ class MainActivity : ComponentActivity() {
         val startAtGallery = rememberSaveable { settings.onboardingDone }
         val scope = rememberCoroutineScope()
         val link by deepLink.collectAsStateWithLifecycle()
-        FacetTheme(themeMode = settings.themeMode) {
-            Box(Modifier.fillMaxSize().background(Facet.colors.bg)) {
-                FacetNavHost(
-                    startAtGallery = startAtGallery,
-                    onOnboardingComplete = { scope.launch { settingsRepo.update { it.copy(onboardingDone = true) } } },
-                    deepLink = link,
-                    onDeepLinkHandled = { deepLink.value = null },
-                )
+        val haptics = LocalHapticFeedback.current
+        CompositionLocalProvider(
+            LocalReducedMotion provides rememberSystemReducedMotion(),
+            // Haptic guidance off silences every vibration the app makes, Compose's own included.
+            LocalHapticFeedback provides remember(haptics, settings.hapticGuidance) { GatedHapticFeedback(haptics, settings.hapticGuidance) },
+        ) {
+            FacetTheme(themeMode = settings.themeMode) {
+                Box(Modifier.fillMaxSize().background(Facet.colors.bg)) {
+                    FacetNavHost(
+                        startAtGallery = startAtGallery,
+                        onOnboardingComplete = { scope.launch { settingsRepo.update { it.copy(onboardingDone = true) } } },
+                        deepLink = link,
+                        onDeepLinkHandled = { deepLink.value = null },
+                    )
+                }
             }
         }
     }

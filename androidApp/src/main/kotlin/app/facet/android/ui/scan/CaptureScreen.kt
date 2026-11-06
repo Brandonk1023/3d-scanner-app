@@ -7,7 +7,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,12 +24,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -53,12 +54,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -79,6 +83,7 @@ import app.facet.android.ar.ArFrameSnapshot
 import app.facet.android.ar.CaptureEngine
 import app.facet.android.ar.PlaneFrame
 import app.facet.android.ar.Projector
+import app.facet.android.ui.components.BusyIndicator
 import app.facet.android.ui.components.ConfirmDialog
 import app.facet.android.ui.components.OutlineButton
 import app.facet.android.ui.components.PrimaryButton
@@ -93,8 +98,8 @@ import app.facet.data.CaptureInfo
 import app.facet.data.ResultQuality
 import app.facet.data.Scan
 import app.facet.export.ExportFormat
-import app.facet.mesh.bounds
 import app.facet.mesh.ScanPipeline
+import app.facet.mesh.bounds
 import app.facet.platform.AndroidHapticsPlayer
 import app.facet.scan.CoverageBand
 import app.facet.scan.CoverageState
@@ -108,14 +113,14 @@ import app.facet.ui.scan.CaptureSheet
 import app.facet.ui.scan.CaptureUiState
 import app.facet.ui.scan.CaptureViewModel
 import app.facet.ui.scan.ScanSetup
+import kotlin.math.roundToInt
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlin.math.roundToInt
-import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
 
 /**
  * Capture (A-Capture.png, Capture-TrackingLost.png) with Finish (Finish-Incomplete.png,
@@ -258,26 +263,23 @@ internal fun CaptureLayer(
             drawCoverageRing(setup.box, frame, projector, state.coverage, band, state.headingDeg, state.coverage.captured[0].size)
         }
 
-        CaptureTopBar(
-            state = state,
-            torchOn = torchOn,
-            onCancel = { confirmCancel = true },
-            onTorch = onTorch,
-            modifier = Modifier.align(Alignment.TopCenter),
-        )
-
+        // Top bar, then the one guidance message under it, laid out together so a taller bar
+        // or banner (large font) pushes down instead of overlapping.
         Column(
-            Modifier
-                .align(Alignment.TopCenter)
-                .statusBarsPadding()
-                .padding(top = 108.dp, start = Space.m, end = Space.m),
+            Modifier.align(Alignment.TopCenter).fillMaxWidth().statusBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(Space.xs),
         ) {
-            val n = notice
-            when {
-                n != null -> GlassPill(stringResource(n), R.drawable.ic_info)
-                state.sheet == null && state.phase == CapturePhase.CAPTURING -> state.message?.let { GuidanceBanner(it) }
+            CaptureTopBar(state = state, torchOn = torchOn, onCancel = { confirmCancel = true }, onTorch = onTorch)
+            Column(
+                Modifier.padding(top = Space.xxs, start = Space.m, end = Space.m),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(Space.xs),
+            ) {
+                val n = notice
+                when {
+                    n != null -> GlassPill(stringResource(n), R.drawable.ic_info)
+                    state.sheet == null && state.phase == CapturePhase.CAPTURING -> state.message?.let { GuidanceBanner(it) }
+                }
             }
         }
 
@@ -328,11 +330,15 @@ internal fun CaptureLayer(
                 Modifier
                     .fillMaxSize()
                     .background(Color.Black.copy(alpha = 0.55f))
-                    .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {},
+                    .swallowTouches(),
                 contentAlignment = Alignment.Center,
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Space.m)) {
-                    CircularProgressIndicator(color = ArColors.guide)
+                Column(
+                    Modifier.semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(Space.m),
+                ) {
+                    BusyIndicator(color = ArColors.guide)
                     Text(stringResource(R.string.capture_building), style = MaterialTheme.typography.titleMedium, color = Color.White)
                 }
             }
@@ -356,17 +362,16 @@ internal fun CaptureLayer(
 // ---- Top bar: Cancel · status pill · mini dial · Torch ----------------------------------------
 
 @Composable
-private fun CaptureTopBar(state: CaptureUiState, torchOn: Boolean, onCancel: () -> Unit, onTorch: () -> Unit, modifier: Modifier) {
+private fun CaptureTopBar(state: CaptureUiState, torchOn: Boolean, onCancel: () -> Unit, onTorch: () -> Unit) {
     Row(
-        modifier
+        Modifier
             .fillMaxWidth()
-            .statusBarsPadding()
             .padding(horizontal = Space.m, vertical = Space.xs),
         verticalAlignment = Alignment.Top,
     ) {
         GlassCircleButton(R.drawable.ic_close, stringResource(R.string.cd_cancel_scan), onCancel)
         Spacer(Modifier.width(Space.s))
-        Box(Modifier.weight(1f).heightIn(min = Sizes.touchMin), contentAlignment = Alignment.CenterStart) {
+        Box(Modifier.weight(1f).heightIn(min = Sizes.touchMinAr), contentAlignment = Alignment.CenterStart) {
             StatusPill(state.phase == CapturePhase.CAPTURING && state.sheet == null, state.elapsedMs)
         }
         Spacer(Modifier.width(Space.s))
@@ -405,7 +410,7 @@ private fun GlassCircleButton(
     description: String,
     onClick: () -> Unit,
     active: Boolean = false,
-    size: Dp = Sizes.touchMin,
+    size: Dp = Sizes.touchMinAr,
     enabled: Boolean = true,
 ) {
     Box(
@@ -421,7 +426,7 @@ private fun GlassCircleButton(
         Icon(
             painterResource(icon), null,
             tint = if (active) ArColors.onAdvice else Color.White,
-            modifier = Modifier.size(if (size > Sizes.touchMin) 28.dp else Sizes.icon),
+            modifier = Modifier.size(if (size > Sizes.touchMinAr) 28.dp else Sizes.icon),
         )
     }
 }
@@ -491,8 +496,19 @@ private fun Modifier.glass() = this
 
 @Composable
 private fun CoveragePanel(coverage: CoverageState) {
-    Row(Modifier.glass().padding(horizontal = 20.dp, vertical = Space.m), verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.width(104.dp)) {
+    // Read as one item: "Coverage 49%. Low 100%, mid 40%, high 0%."
+    val description = stringResource(
+        R.string.cd_coverage_panel,
+        (coverage.overall * 100).roundToInt(),
+        (coverage.band(CoverageBand.LOW) * 100).roundToInt(),
+        (coverage.band(CoverageBand.MID) * 100).roundToInt(),
+        (coverage.band(CoverageBand.HIGH) * 100).roundToInt(),
+    )
+    Row(
+        Modifier.glass().clearAndSetSemantics { contentDescription = description }.padding(horizontal = 20.dp, vertical = Space.m),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.widthIn(min = 104.dp)) {
             Row(verticalAlignment = Alignment.Bottom) {
                 Text("${(coverage.overall * 100).roundToInt()}", style = Facet.type.displayMono.copy(fontSize = 44.sp, lineHeight = 48.sp), color = Color.White)
                 Text("%", style = Facet.type.valueMono.copy(fontSize = 20.sp), color = Color.White, modifier = Modifier.padding(bottom = 6.dp))
@@ -510,8 +526,9 @@ internal fun BandBars(coverage: CoverageState, modifier: Modifier = Modifier) {
     Column(modifier, verticalArrangement = Arrangement.spacedBy(Space.xs)) {
         listOf(CoverageBand.HIGH to R.string.band_high, CoverageBand.MID to R.string.band_mid, CoverageBand.LOW to R.string.band_low).forEach { (band, label) ->
             val f = coverage.band(band)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(label), style = Facet.type.dataMono, color = ArColors.textSecondary, modifier = Modifier.width(44.dp))
+            // One item per band: "HIGH, 40%" / "LOW, Complete". Widths grow with the font.
+            Row(Modifier.semantics(mergeDescendants = true) {}, verticalAlignment = Alignment.CenterVertically) {
+                Text(stringResource(label), style = Facet.type.dataMono, color = ArColors.textSecondary, modifier = Modifier.widthIn(min = 44.dp).padding(end = Space.xxs))
                 Canvas(Modifier.weight(1f).height(12.dp)) {
                     val r = androidx.compose.ui.geometry.CornerRadius(size.height / 2)
                     when {
@@ -530,7 +547,7 @@ internal fun BandBars(coverage: CoverageState, modifier: Modifier = Modifier) {
                         )
                     }
                 }
-                Box(Modifier.width(48.dp), contentAlignment = Alignment.CenterEnd) {
+                Box(Modifier.widthIn(min = 48.dp).padding(start = Space.xxs), contentAlignment = Alignment.CenterEnd) {
                     if (f >= 1f) {
                         Icon(painterResource(R.drawable.ic_check), stringResource(R.string.a11y_complete), tint = ArColors.guide, modifier = Modifier.size(20.dp))
                     } else {
@@ -545,7 +562,7 @@ internal fun BandBars(coverage: CoverageState, modifier: Modifier = Modifier) {
 @Composable
 private fun TrackingLostPanel(overall: Float) {
     Row(
-        Modifier.glass().padding(horizontal = 20.dp, vertical = Space.m),
+        Modifier.glass().semantics(mergeDescendants = true) {}.padding(horizontal = 20.dp, vertical = Space.m),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Space.m),
     ) {
@@ -574,7 +591,7 @@ private fun GuidanceBanner(message: GuidanceMessage) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(Space.xs)) {
         Box(
             Modifier
-                .semantics { liveRegion = LiveRegionMode.Polite }
+                .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
                 .background(ArColors.halo, CircleShape)
                 .padding(ArColors.haloExtra + 1.dp),
         ) {
@@ -598,7 +615,7 @@ private fun GuidanceBanner(message: GuidanceMessage) {
 private fun GlassPill(text: String, @DrawableRes icon: Int?, iconTint: Color = Color.White) {
     Row(
         Modifier
-            .semantics { liveRegion = LiveRegionMode.Polite }
+            .semantics(mergeDescendants = true) { liveRegion = LiveRegionMode.Polite }
             .clip(CircleShape)
             .background(ArColors.glass)
             .border(1.dp, ArColors.glassBorder, CircleShape)
@@ -629,13 +646,16 @@ private fun CaptureControls(state: CaptureUiState, onPause: () -> Unit, onFinish
         val finishDescription = if (enabled) finishLabel else stringResource(R.string.cd_finish_disabled, (state.finishEnabledAt * 100).roundToInt())
         Row(
             Modifier
-                .width(Sizes.finishWidth)
-                .height(Sizes.finishHeight)
+                .padding(horizontal = Space.xs)
+                .weight(1f, fill = false)
+                .widthIn(min = Sizes.finishWidth)
+                .heightIn(min = Sizes.finishHeight)
                 .alpha(if (enabled) 1f else 0.45f)
                 .clip(CircleShape)
                 .background(Color.White)
                 .clickable(enabled = enabled, role = Role.Button, onClick = onFinish)
-                .semantics { contentDescription = finishDescription },
+                .semantics { contentDescription = finishDescription }
+                .padding(horizontal = Space.m, vertical = Space.xs),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center,
         ) {
@@ -662,16 +682,20 @@ private fun SheetScrim(onDismiss: (() -> Unit)?, content: @Composable ColumnScop
         Modifier
             .fillMaxSize()
             .background(Color.Black.copy(alpha = 0.55f))
-            .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { onDismiss?.invoke() },
+            // Tap outside to dismiss. Not a TalkBack target: Back does the same.
+            .pointerInput(onDismiss) { detectTapGestures { onDismiss?.invoke() } },
         contentAlignment = Alignment.BottomCenter,
     ) {
         Column(
             Modifier
                 .fillMaxWidth()
                 .widthIn(max = 560.dp)
+                .statusBarsPadding()
                 .clip(RoundedCornerShape(topStart = Radius.sheet, topEnd = Radius.sheet))
                 .background(Facet.colors.surface)
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) {}
+                .swallowTouches()
+                // Scrolls when large text makes it taller than the screen.
+                .verticalScroll(rememberScrollState())
                 .navigationBarsPadding()
                 .padding(horizontal = Space.l, vertical = Space.l),
             verticalArrangement = Arrangement.spacedBy(Space.m),
@@ -704,7 +728,7 @@ private fun IncompleteSheet(state: CaptureUiState, onKeepScanning: () -> Unit, o
         Column(verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.xs)) {
                 Icon(painterResource(R.drawable.ic_warning), null, tint = ArColors.warning, modifier = Modifier.size(24.dp))
-                Text(stringResource(title), style = MaterialTheme.typography.titleLarge, color = Facet.colors.text)
+                Text(stringResource(title), style = MaterialTheme.typography.titleLarge, color = Facet.colors.text, modifier = Modifier.semantics { heading() })
             }
             Text(stringResource(body, percent), style = MaterialTheme.typography.bodyMedium, color = Facet.colors.textMuted)
         }
@@ -713,8 +737,8 @@ private fun IncompleteSheet(state: CaptureUiState, onKeepScanning: () -> Unit, o
         state.coverage,
         Modifier.fillMaxWidth().clip(RoundedCornerShape(Radius.card)).background(Facet.colors.surface2).padding(Space.m),
     )
-    PrimaryButton(stringResource(R.string.keep_scanning), onKeepScanning, Modifier.fillMaxWidth())
-    OutlineButton(stringResource(R.string.finish_anyway), onFinishAnyway, Modifier.fillMaxWidth())
+    PrimaryButton(stringResource(R.string.keep_scanning), onKeepScanning, Modifier.fillMaxWidth(), minHeight = Sizes.touchMinAr)
+    OutlineButton(stringResource(R.string.finish_anyway), onFinishAnyway, Modifier.fillMaxWidth(), minHeight = Sizes.touchMinAr)
     Text(
         stringResource(R.string.incomplete_tip),
         style = MaterialTheme.typography.bodyMedium,
@@ -728,7 +752,7 @@ private fun IncompleteSheet(state: CaptureUiState, onKeepScanning: () -> Unit, o
 private fun ChooseResultSheet(state: CaptureUiState, onChoose: (ResultMode, Boolean) -> Unit) {
     var mode by rememberSaveable { mutableStateOf(if (state.highDetailBadge) ResultMode.HIGH_DETAIL else ResultMode.QUICK) }
     var remember by rememberSaveable { mutableStateOf(false) }
-    Text(stringResource(R.string.mode_title), style = MaterialTheme.typography.headlineSmall, color = Facet.colors.text)
+    Text(stringResource(R.string.mode_title), style = MaterialTheme.typography.headlineSmall, color = Facet.colors.text, modifier = Modifier.semantics { heading() })
     RadioCard(selected = mode == ResultMode.QUICK, onClick = { mode = ResultMode.QUICK }) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(stringResource(R.string.mode_quick), style = MaterialTheme.typography.titleMedium, color = Facet.colors.text)
@@ -756,7 +780,7 @@ private fun ChooseResultSheet(state: CaptureUiState, onChoose: (ResultMode, Bool
     Row(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = Sizes.touchMin)
+            .heightIn(min = Sizes.touchMinAr)
             .toggleable(value = remember, onValueChange = { remember = it }, role = Role.Checkbox),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -768,7 +792,7 @@ private fun ChooseResultSheet(state: CaptureUiState, onChoose: (ResultMode, Bool
         Spacer(Modifier.width(Space.s))
         Text(stringResource(R.string.mode_remember), style = MaterialTheme.typography.bodyLarge, color = Facet.colors.text)
     }
-    PrimaryButton(stringResource(R.string.action_continue), { onChoose(mode, remember) }, Modifier.fillMaxWidth())
+    PrimaryButton(stringResource(R.string.action_continue), { onChoose(mode, remember) }, Modifier.fillMaxWidth(), minHeight = Sizes.touchMinAr)
     Text(
         stringResource(R.string.mode_note),
         style = MaterialTheme.typography.bodyMedium,
@@ -783,7 +807,7 @@ private fun InterruptedSheet(state: CaptureUiState, onResume: () -> Unit, onFini
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Space.m)) {
         DialTile(state.coverage)
         Column(verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
-            Text(stringResource(R.string.paused_title), style = MaterialTheme.typography.headlineSmall, color = Facet.colors.text)
+            Text(stringResource(R.string.paused_title), style = MaterialTheme.typography.headlineSmall, color = Facet.colors.text, modifier = Modifier.semantics { heading() })
             Text(
                 stringResource(R.string.paused_body, (state.coverage.overall * 100).roundToInt()),
                 style = MaterialTheme.typography.bodyMedium,
@@ -804,9 +828,13 @@ private fun InterruptedSheet(state: CaptureUiState, onResume: () -> Unit, onFini
         icon = if (state.resumeAvailable) R.drawable.ic_play else null,
         enabled = state.resumeAvailable,
         modifier = Modifier.fillMaxWidth(),
+        minHeight = Sizes.touchMinAr,
     )
-    OutlineButton(stringResource(R.string.finish_with_what_i_have), onFinish, Modifier.fillMaxWidth())
+    OutlineButton(stringResource(R.string.finish_with_what_i_have), onFinish, Modifier.fillMaxWidth(), minHeight = Sizes.touchMinAr)
     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-        TextLinkButton(stringResource(R.string.discard_scan), onDiscard)
+        TextLinkButton(stringResource(R.string.discard_scan), onDiscard, minHeight = Sizes.touchMinAr)
     }
 }
+
+/** Eats taps so they don't reach the camera view underneath, without adding a TalkBack target. */
+private fun Modifier.swallowTouches() = pointerInput(Unit) { detectTapGestures { } }

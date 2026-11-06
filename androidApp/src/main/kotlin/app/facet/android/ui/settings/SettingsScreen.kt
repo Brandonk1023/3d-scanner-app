@@ -6,13 +6,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -44,6 +45,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.facet.FacetInfo
@@ -165,13 +167,23 @@ fun SettingsScreen(onBack: () -> Unit, onNativeLibraries: () -> Unit, onOpenScan
 
             Section(R.string.settings_storage) {
                 ListGroup {
-                    Column(Modifier.padding(Space.m), verticalArrangement = Arrangement.spacedBy(Space.s)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                    // Read as one item: "3 scans, 12 MB · 8.6 GB free, Models 9 MB, Saved photos 3 MB".
+                    Column(
+                        Modifier.semantics(mergeDescendants = true) {}.padding(Space.m),
+                        verticalArrangement = Arrangement.spacedBy(Space.s),
+                    ) {
+                        // Count and summary share a line when they fit, else the summary wraps under.
+                        FlowRow(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalArrangement = Arrangement.spacedBy(Space.xxs),
+                            itemVerticalAlignment = Alignment.CenterVertically,
+                        ) {
                             Text(
                                 pluralStringResource(R.plurals.storage_scans, state.usage.scanCount, state.usage.scanCount),
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = Facet.colors.text,
-                                modifier = Modifier.weight(1f),
+                                modifier = Modifier.padding(end = Space.s),
                             )
                             Text(
                                 stringResource(R.string.storage_summary, formatBytes(state.usage.totalBytes), formatBytes(state.freeBytes)),
@@ -180,7 +192,7 @@ fun SettingsScreen(onBack: () -> Unit, onNativeLibraries: () -> Unit, onOpenScan
                             )
                         }
                         StorageBar(state.modelsFraction, state.photosFraction)
-                        Row(horizontalArrangement = Arrangement.spacedBy(Space.m)) {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(Space.m), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
                             Legend(Facet.colors.text, stringResource(R.string.storage_models, formatBytes(state.usage.modelBytes)))
                             Legend(Facet.colors.textMuted, stringResource(R.string.storage_photos, formatBytes(state.usage.savedPhotoBytes)))
                         }
@@ -202,13 +214,12 @@ fun SettingsScreen(onBack: () -> Unit, onNativeLibraries: () -> Unit, onOpenScan
                         val core = runCatching { container.meshEngine.coreVersion() }.getOrDefault("?")
                         name to core
                     }
-                    Row(
-                        Modifier.fillMaxWidth().heightIn(min = 56.dp).padding(horizontal = Space.m),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(stringResource(R.string.about_version), style = MaterialTheme.typography.bodyLarge, color = Facet.colors.text, modifier = Modifier.weight(1f))
-                        Text(stringResource(R.string.about_version_value, version.first, version.second), style = Facet.type.dataMono, color = Facet.colors.textMuted)
-                    }
+                    NavRow(
+                        stringResource(R.string.about_version),
+                        stringResource(R.string.about_version_value, version.first, version.second),
+                        onClick = null,
+                        valueMono = true,
+                    )
                     ListDivider()
                     val licencesTitle = stringResource(R.string.about_licences)
                     NavRow(licencesTitle, null, { openOssLicences(context, licencesTitle, s.themeMode) })
@@ -250,6 +261,14 @@ fun SettingsScreen(onBack: () -> Unit, onNativeLibraries: () -> Unit, onOpenScan
                         )
                         ListDivider()
                         var failNext by remember { mutableStateOf(container.debug.failNextHighDetail) }
+                        var lowStorage by remember { mutableStateOf(container.debug.pretendLowStorage) }
+                        // The High detail worker uses "fail next" up while Settings may still be open
+                        // underneath: show the real flags whenever Settings comes back.
+                        LifecycleResumeEffect(container.debug) {
+                            failNext = container.debug.failNextHighDetail
+                            lowStorage = container.debug.pretendLowStorage
+                            onPauseOrDispose {}
+                        }
                         SwitchRow(
                             stringResource(R.string.dev_fail_high_detail),
                             stringResource(R.string.dev_fail_high_detail_sub),
@@ -257,7 +276,6 @@ fun SettingsScreen(onBack: () -> Unit, onNativeLibraries: () -> Unit, onOpenScan
                             onCheckedChange = { failNext = it; container.debug.failNextHighDetail = it },
                         )
                         ListDivider()
-                        var lowStorage by remember { mutableStateOf(container.debug.pretendLowStorage) }
                         SwitchRow(
                             stringResource(R.string.dev_low_storage),
                             stringResource(R.string.dev_low_storage_sub),

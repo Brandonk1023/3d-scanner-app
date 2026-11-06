@@ -12,7 +12,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -28,7 +30,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
@@ -50,6 +51,8 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.heading
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -60,15 +63,18 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.facet.android.R
+import app.facet.android.ui.components.BusyIndicator
 import app.facet.android.appContainer
 import app.facet.android.processing.ProcessingNotifications
 import app.facet.android.ui.components.FacetSnackbarHost
 import app.facet.android.ui.components.FacetTopBar
+import app.facet.android.ui.components.FitText
 import app.facet.android.ui.components.Headline
 import app.facet.android.ui.components.IconTile
 import app.facet.android.ui.components.OutlineButton
@@ -79,6 +85,7 @@ import app.facet.android.ui.theme.Facet
 import app.facet.android.ui.theme.Radius
 import app.facet.android.ui.theme.Space
 import app.facet.format.formatBytes
+import app.facet.format.formatBytesAbout
 import app.facet.mesh.Mesh
 import app.facet.platform.FailureReason
 import app.facet.platform.ProcessingStage
@@ -152,7 +159,7 @@ fun ProcessingScreen(
             FacetTopBar(scan?.name.orEmpty(), onBack = onBack, subtitle = subtitle)
             when (state.phase) {
                 ProcessingPhase.LOADING -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator(color = Facet.colors.accent)
+                    BusyIndicator(color = Facet.colors.accentInk)
                 }
                 ProcessingPhase.RUNNING -> RunningPage(state, preview, onLeave = onLeave, onCancel = vm::cancel)
                 ProcessingPhase.FAILED -> FailedPage(state.failure!!, onRetry = vm::retry, onUseQuick = vm::useQuick, snackbar = snackbar)
@@ -163,16 +170,25 @@ fun ProcessingScreen(
     }
 }
 
+/**
+ * Scrolls when the content is taller than the screen (large font), and is at least screen-tall
+ * otherwise, so a weighted spacer still pushes the buttons to the bottom.
+ */
 @Composable
 private fun PageColumn(content: @Composable ColumnScope.() -> Unit) {
-    Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .navigationBarsPadding()
-            .padding(horizontal = Space.l, vertical = Space.m),
-        content = content,
-    )
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val screenHeight = maxHeight
+        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = screenHeight)
+                    .navigationBarsPadding()
+                    .padding(horizontal = Space.l, vertical = Space.m),
+                content = content,
+            )
+        }
+    }
 }
 
 @Composable
@@ -224,7 +240,8 @@ private fun PreviewWithRing(state: ProcessingUiState, preview: Mesh?) {
         // The Quick result, faded, while the fine one is built.
         if (preview != null) MeshView(preview, Modifier.fillMaxSize().alpha(0.35f), interactive = false)
         val track = Facet.colors.border
-        val arc = Facet.colors.accent
+        // accentInk, not the lime fill: the arc must reach 3:1 on the light surface.
+        val arc = Facet.colors.accentInk
         val description = stringResource(R.string.cd_proc_progress, percent)
         Box(
             Modifier.size(176.dp).clip(CircleShape).background(Facet.colors.surface.copy(alpha = 0.6f))
@@ -239,7 +256,8 @@ private fun PreviewWithRing(state: ProcessingUiState, preview: Mesh?) {
                 drawArc(arc, -90f, 360f * state.progress.overall, false, Offset(inset, inset), arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
             }
             Column(Modifier.width(120.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("$percent%", style = Facet.type.displayMono, color = Facet.colors.text, maxLines = 1)
+                // Shrinks rather than clipping "100%" at large font sizes.
+                FitText("$percent%", Facet.type.displayMono, Facet.colors.text, minSize = (20f / LocalDensity.current.fontScale).sp)
                 // Wraps inside the ring rather than running under it.
                 Text(timeLeft(state), style = Facet.type.dataMono, color = Facet.colors.textMuted, textAlign = TextAlign.Center, maxLines = 2)
             }
@@ -268,8 +286,16 @@ private fun StageRowView(row: StageRow) {
         },
         label,
     )
+    val detail = when (val d = row.detail) {
+        is StageDetail.Photos -> pluralStringResource(R.plurals.proc_photos, d.count, d.count)
+        is StageDetail.Elapsed -> elapsed(d.ms)
+        is StageDetail.Items -> stringResource(R.string.stage_of, d.done, d.total)
+        null -> null
+    }
+    // One item: "Building fine mesh, in progress, 8 of 36".
+    val spoken = listOfNotNull(description, detail).joinToString(", ")
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 56.dp).semantics(mergeDescendants = true) { contentDescription = description },
+        Modifier.fillMaxWidth().heightIn(min = 56.dp).clearAndSetSemantics { contentDescription = spoken },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         StageIcon(row.state)
@@ -280,12 +306,6 @@ private fun StageRowView(row: StageRow) {
             color = if (row.state == StageState.TODO) Facet.colors.textMuted else Facet.colors.text,
             modifier = Modifier.weight(1f),
         )
-        val detail = when (val d = row.detail) {
-            is StageDetail.Photos -> pluralStringResource(R.plurals.proc_photos, d.count, d.count)
-            is StageDetail.Elapsed -> elapsed(d.ms)
-            is StageDetail.Items -> stringResource(R.string.stage_of, d.done, d.total)
-            null -> null
-        }
         if (detail != null) Text(detail, style = Facet.type.dataMono, color = Facet.colors.textMuted)
     }
 }
@@ -297,7 +317,7 @@ private fun StageIcon(state: StageState) {
         StageState.DONE -> Box(Modifier.size(size).clip(CircleShape).background(Facet.colors.accent), contentAlignment = Alignment.Center) {
             Icon(painterResource(R.drawable.ic_check), contentDescription = null, tint = Facet.colors.onAccent, modifier = Modifier.size(18.dp))
         }
-        StageState.CURRENT -> CircularProgressIndicator(Modifier.size(size), color = Facet.colors.accent, strokeWidth = 3.dp)
+        StageState.CURRENT -> BusyIndicator(Facet.colors.accentInk, Modifier.size(size), strokeWidth = 3.dp)
         StageState.TODO -> {
             val color = Facet.colors.textMuted
             Canvas(Modifier.size(size)) {
@@ -350,7 +370,7 @@ private fun FailedPage(failure: ProcessingStatus.Failed, onRetry: () -> Unit, on
                     .padding(Space.m),
                 verticalArrangement = Arrangement.spacedBy(Space.xs),
             ) {
-                Text(stringResource(R.string.fail_help_title), style = MaterialTheme.typography.titleMedium, color = Facet.colors.text)
+                Text(stringResource(R.string.fail_help_title), style = MaterialTheme.typography.titleMedium, color = Facet.colors.text, modifier = Modifier.semantics { heading() })
                 Text(
                     stringResource(if (failure.reason == FailureReason.STORAGE) R.string.fail_help_storage else R.string.fail_help_body),
                     style = MaterialTheme.typography.bodyMedium,
@@ -358,7 +378,9 @@ private fun FailedPage(failure: ProcessingStatus.Failed, onRetry: () -> Unit, on
                 )
             }
         }
-        Spacer(Modifier.weight(1f).heightIn(min = Space.xl))
+        // A fixed gap, then whatever is left: weight alone collapses to 0 once the page scrolls.
+        Spacer(Modifier.height(Space.xl))
+        Spacer(Modifier.weight(1f))
         if (canRetry) {
             PrimaryButton(stringResource(R.string.try_again), onRetry, icon = R.drawable.ic_refresh, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(Space.s))
@@ -393,7 +415,7 @@ private fun LowStoragePage(low: LowStorage, onFreeUpSpace: () -> Unit, onKeepQui
         Headline(stringResource(R.string.low_storage_title))
         Spacer(Modifier.height(Space.m))
         Text(
-            stringResource(R.string.low_storage_body, formatBytes(low.neededBytes), formatBytes(low.freeBytes)),
+            stringResource(R.string.low_storage_body, formatBytesAbout(low.neededBytes), formatBytes(low.freeBytes)),
             style = MaterialTheme.typography.bodyLarge,
             color = Facet.colors.textMuted,
         )
@@ -401,11 +423,17 @@ private fun LowStoragePage(low: LowStorage, onFreeUpSpace: () -> Unit, onKeepQui
         val cardShape = RoundedCornerShape(Radius.card)
         Column(
             Modifier.fillMaxWidth().clip(cardShape).background(Facet.colors.surface).border(1.dp, Facet.colors.border, cardShape)
+                .semantics(mergeDescendants = true) {}
                 .padding(Space.m),
             verticalArrangement = Arrangement.spacedBy(Space.s),
         ) {
-            Row(Modifier.fillMaxWidth()) {
-                Text(stringResource(R.string.low_storage_free, formatBytes(low.freeBytes)), style = Facet.type.dataMono, color = Facet.colors.text, modifier = Modifier.weight(1f))
+            // "1.2 GB free" and "needs ~2.0 GB" share a line when they fit, else wrap whole.
+            FlowRow(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalArrangement = Arrangement.spacedBy(Space.xxs),
+            ) {
+                Text(stringResource(R.string.low_storage_free, formatBytes(low.freeBytes)), style = Facet.type.dataMono, color = Facet.colors.text, modifier = Modifier.padding(end = Space.s))
                 Text(stringResource(R.string.low_storage_needs, formatBytes(low.neededBytes)), style = Facet.type.dataMono, color = Facet.colors.textMuted)
             }
             StorageBar(low.freeBytes.toFloat() / low.neededBytes)
@@ -417,7 +445,9 @@ private fun LowStoragePage(low: LowStorage, onFreeUpSpace: () -> Unit, onKeepQui
                 )
             }
         }
-        Spacer(Modifier.weight(1f).heightIn(min = Space.xl))
+        // A fixed gap, then whatever is left: weight alone collapses to 0 once the page scrolls.
+        Spacer(Modifier.height(Space.xl))
+        Spacer(Modifier.weight(1f))
         PrimaryButton(stringResource(R.string.free_up_space), onFreeUpSpace, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(Space.s))
         OutlineButton(stringResource(R.string.keep_quick), onKeepQuick, modifier = Modifier.fillMaxWidth())

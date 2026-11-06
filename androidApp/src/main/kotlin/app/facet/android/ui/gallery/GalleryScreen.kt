@@ -60,15 +60,19 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.unit.sp
 import app.facet.android.ui.components.FitText
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -123,12 +127,14 @@ fun GalleryScreen(
         topBar = { GalleryTopBar(onSettings) },
         floatingActionButton = {
             if (hasScans) {
+                val newScan = stringResource(R.string.new_scan)
                 ExtendedFloatingActionButton(
                     onClick = onNewScan,
                     containerColor = Facet.colors.accent,
                     contentColor = Facet.colors.onAccent,
                     shape = RoundedCornerShape(Radius.fab),
-                    modifier = Modifier.heightIn(min = Sizes.fab),
+                    // Material's extended FAB doesn't expose its text to accessibility; say it here.
+                    modifier = Modifier.heightIn(min = Sizes.fab).semantics { contentDescription = newScan },
                     icon = { Icon(painterResource(R.drawable.ic_add), null) },
                     text = { Text(stringResource(R.string.new_scan), style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)) },
                 )
@@ -139,7 +145,8 @@ fun GalleryScreen(
             state.loading -> Box(Modifier.fillMaxSize().padding(padding))
             !hasScans -> EmptyGallery(Modifier.padding(padding), onNewScan, onTips)
             else -> LazyVerticalGrid(
-                columns = GridCells.Adaptive(minSize = 160.dp),
+                // Cards widen with the font size: two columns at 100 %, one at large sizes so names, sizes and chips fit.
+                columns = GridCells.Adaptive(minSize = 160.dp * LocalDensity.current.fontScale.coerceAtLeast(1f)),
                 modifier = Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(start = Space.m, end = Space.m, bottom = 112.dp),
                 horizontalArrangement = Arrangement.spacedBy(Space.m),
@@ -246,7 +253,7 @@ private fun SearchField(query: String, onChange: (String) -> Unit) {
                 }
                 if (query.isNotEmpty()) {
                     IconButton(onClick = { onChange("") }) {
-                        Icon(painterResource(R.drawable.ic_close), stringResource(R.string.action_close), tint = Facet.colors.textMuted)
+                        Icon(painterResource(R.drawable.ic_close), stringResource(R.string.cd_clear_search), tint = Facet.colors.textMuted)
                     }
                 }
             }
@@ -414,8 +421,20 @@ private fun ScanActionsSheet(
         sheetState = sheetState,
         containerColor = Facet.colors.surface,
         shape = RoundedCornerShape(topStart = Radius.sheet, topEnd = Radius.sheet),
+        // No Material handle: it is a 32 dp-wide TalkBack target whose only action (expand/collapse)
+        // does nothing on a sheet that is always fully open. Back, the scrim or a drag close it.
+        dragHandle = null,
     ) {
         Column(Modifier.verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom = Space.m)) {
+            // Decorative handle, drawn as part of the sheet.
+            Box(
+                Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .padding(vertical = Space.m)
+                    .size(width = 32.dp, height = 4.dp)
+                    .clip(CircleShape)
+                    .background(Facet.colors.border),
+            )
             Row(
                 Modifier.padding(horizontal = 20.dp).padding(bottom = Space.m),
                 horizontalArrangement = Arrangement.spacedBy(Space.m),
@@ -484,7 +503,7 @@ private fun EmptyGallery(modifier: Modifier, onNewScan: () -> Unit, onTips: () -
             verticalArrangement = Arrangement.spacedBy(Space.m, Alignment.CenterVertically),
         ) {
             EmptyIllustration(Modifier.size(width = 200.dp, height = 150.dp))
-            Text(stringResource(R.string.empty_title), style = MaterialTheme.typography.headlineSmall, color = Facet.colors.text)
+            Text(stringResource(R.string.empty_title), style = MaterialTheme.typography.headlineSmall, color = Facet.colors.text, modifier = Modifier.semantics { heading() })
             Text(
                 stringResource(R.string.empty_body),
                 style = MaterialTheme.typography.bodyLarge,

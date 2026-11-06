@@ -22,7 +22,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -45,6 +44,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -53,6 +53,7 @@ import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.facet.android.R
+import app.facet.android.ui.components.BusyIndicator
 import app.facet.android.appContainer
 import app.facet.android.ui.components.FacetTopBar
 import app.facet.android.ui.components.Headline
@@ -210,7 +211,8 @@ private fun Checklist(result: DeviceCheckResult?, cameraAllowed: Boolean) {
 @Composable
 private fun CheckRow(title: String, status: String, state: RowState, spinning: Boolean = false) {
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 68.dp).padding(horizontal = Space.m, vertical = Space.s),
+        // One item per check: "Camera, Not allowed yet · needed to scan".
+        Modifier.fillMaxWidth().heightIn(min = 68.dp).semantics(mergeDescendants = true) {}.padding(horizontal = Space.m, vertical = Space.s),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(Space.m),
     ) {
@@ -235,7 +237,7 @@ private fun CheckRow(title: String, status: String, state: RowState, spinning: B
 private fun StatusMark(state: RowState, spinning: Boolean) {
     val size = 28.dp
     when {
-        spinning -> CircularProgressIndicator(Modifier.size(size).padding(3.dp), color = Facet.colors.textMuted, strokeWidth = 2.5.dp)
+        spinning -> BusyIndicator(Facet.colors.textMuted, Modifier.size(size).padding(3.dp), strokeWidth = 2.5.dp)
         state == RowState.OK -> Box(
             Modifier.size(size).background(Facet.colors.successContainer, CircleShape),
             contentAlignment = Alignment.Center,
@@ -294,7 +296,7 @@ private fun UnsupportedScreen(deviceModel: String) {
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Column(Modifier.padding(Space.m), verticalArrangement = Arrangement.spacedBy(Space.xxs)) {
-                    Text(stringResource(R.string.unsupported_card_title), style = MaterialTheme.typography.titleSmall, color = Facet.colors.text)
+                    Text(stringResource(R.string.unsupported_card_title), style = MaterialTheme.typography.titleSmall, color = Facet.colors.text, modifier = Modifier.semantics { heading() })
                     Text(
                         stringResource(R.string.unsupported_card_body, appName),
                         style = MaterialTheme.typography.bodyMedium,

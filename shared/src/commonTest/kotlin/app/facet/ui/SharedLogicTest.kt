@@ -6,6 +6,7 @@ import app.facet.data.FakeScanRepository
 import app.facet.export.ExportFormat
 import app.facet.export.sanitizeFileName
 import app.facet.format.formatBytes
+import app.facet.format.formatBytesAbout
 import app.facet.format.formatCount
 import app.facet.format.formatFixed
 import app.facet.format.formatSignedPercent
@@ -67,6 +68,9 @@ class SharedLogicTest {
         assertEquals("4.1 MB", formatBytes(4_100_000))
         assertEquals("18.6 GB", formatBytes(18_600_000_000))
         assertEquals("640 KB", formatBytes(640_000))
+        assertEquals("2 GB", formatBytesAbout(2_000_000_000))
+        assertEquals("2.1 GB", formatBytesAbout(2_100_000_000))
+        assertEquals("500 MB", formatBytesAbout(500_000_000))
     }
 
     @Test

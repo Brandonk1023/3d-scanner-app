@@ -99,6 +99,7 @@
     <string name="gallery_no_matches">No scans match</string>
     <string name="gallery_no_matches_body">Try another name or filter.</string>
     <string name="cd_scan_actions">Show actions</string>
+    <string name="cd_clear_search">Clear search</string>
     <string name="rename_title">Rename scan</string>
     <string name="rename_label">Name</string>
     <string name="delete_title">Delete %1$s?</string>
@@ -199,6 +200,14 @@
     <string name="cd_handle_height">Box height handle</string>
     <string name="cd_handle_side">Box side handle</string>
     <string name="cd_handle_move">Move box handle</string>
+    <string name="cd_camera_view">Camera view</string>
+    <string name="a11y_place_centre">Place the box on what\'s in the centre</string>
+    <string name="a11y_taller">Make taller</string>
+    <string name="a11y_shorter">Make shorter</string>
+    <string name="a11y_wider">Make wider</string>
+    <string name="a11y_narrower">Make narrower</string>
+    <string name="a11y_turn_left">Turn box left</string>
+    <string name="a11y_turn_right">Turn box right</string>
     <string name="scan_low_storage_title">Not enough space to scan</string>
     <string name="scan_low_storage_body">A scan needs about %1$s free while it works. This phone has %2$s free. Free up some space, then try again.</string>
     <string name="ar_error_title">Can\'t start the camera</string>
@@ -216,6 +225,7 @@
     <string name="cd_mesh">Hide mesh overlay</string>
     <string name="finish">Finish</string>
     <string name="cd_dial">Coverage map. Low %1$d%%, mid %2$d%%, high %3$d%%.</string>
+    <string name="cd_coverage_panel">Coverage %1$d%%. Low %2$d%%, mid %3$d%%, high %4$d%%.</string>
     <string name="g_tracking_lost">Tracking lost</string>
     <string name="g_tracking_lost_sub">Point back at the object</string>
     <string name="g_too_close">Too close</string>

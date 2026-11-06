@@ -1,5 +1,10 @@
 package app.facet.android.nav
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
@@ -9,6 +14,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import app.facet.android.appContainer
+import app.facet.android.ui.components.LocalReducedMotion
 import app.facet.android.ui.device.DeviceCheckScreen
 import app.facet.android.ui.export.ExportScreen
 import app.facet.android.ui.gallery.GalleryScreen
@@ -76,7 +82,14 @@ fun FacetNavHost(
         nav.navigate(route) { popUpTo(Gallery) }
     }
 
-    NavHost(navController = nav, startDestination = if (startAtGallery) Gallery else Onboarding(1)) {
+    // Remove animations: screens switch without the default cross-fade.
+    val reducedMotion = LocalReducedMotion.current
+    NavHost(
+        navController = nav,
+        startDestination = if (startAtGallery) Gallery else Onboarding(1),
+        enterTransition = { if (reducedMotion) EnterTransition.None else fadeIn(tween(NAV_FADE_MS)) },
+        exitTransition = { if (reducedMotion) ExitTransition.None else fadeOut(tween(NAV_FADE_MS)) },
+    ) {
 
         composable<Onboarding> { entry ->
             val route = entry.toRoute<Onboarding>()
@@ -194,3 +207,6 @@ fun FacetNavHost(
         }
     }
 }
+
+/** Navigation Compose's default cross-fade length. */
+private const val NAV_FADE_MS = 700

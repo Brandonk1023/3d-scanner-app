@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -157,7 +158,7 @@ private fun Modifier.dotsDescription(page: Int): Modifier {
 
 @Composable
 private fun Tip(@DrawableRes icon: Int, @StringRes title: Int, body: String) {
-    Row(horizontalArrangement = Arrangement.spacedBy(Space.m)) {
+    Row(Modifier.semantics(mergeDescendants = true) {}, horizontalArrangement = Arrangement.spacedBy(Space.m)) {
         IconTile(icon, size = 48.dp, iconSize = 24.dp, radius = Radius.card, tint = Facet.colors.accentInk)
         Column(Modifier.weight(1f)) {
             Text(stringResource(title), style = MaterialTheme.typography.titleMedium, color = Facet.colors.text)
@@ -168,9 +169,10 @@ private fun Tip(@DrawableRes icon: Int, @StringRes title: Int, body: String) {
 
 @Composable
 private fun Step(number: Int, @StringRes title: Int, @StringRes body: Int) {
-    Row(horizontalArrangement = Arrangement.spacedBy(Space.m)) {
+    // One item: "1, Place the box, Point at a table…". The circle grows with the number's font size.
+    Row(Modifier.semantics(mergeDescendants = true) {}, horizontalArrangement = Arrangement.spacedBy(Space.m)) {
         Box(
-            Modifier.size(44.dp).border(2.dp, Facet.colors.accentInk, CircleShape),
+            Modifier.sizeIn(minWidth = 44.dp, minHeight = 44.dp).aspectRatio(1f).border(2.dp, Facet.colors.accentInk, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Text(
