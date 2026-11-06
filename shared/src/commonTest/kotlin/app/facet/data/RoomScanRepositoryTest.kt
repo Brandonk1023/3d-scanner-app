@@ -38,6 +38,8 @@ private class FakeScanDao : ScanDao {
     override suspend fun upsert(scan: ScanEntity) = rows.update { it + (scan.id to scan) }
     override suspend fun rename(id: String, name: String) = rows.update { m -> m[id]?.let { m + (id to it.copy(name = name)) } ?: m }
     override suspend fun delete(id: String) = rows.update { it - id }
+    override suspend fun setProcessing(id: String, percent: Int?) =
+        rows.update { m -> m[id]?.let { m + (id to it.copy(processingPercent = percent)) } ?: m }
     override suspend fun idsWithClearablePhotos(): List<String> =
         rows.value.values.filter { it.hasSavedPhotos && it.processingPercent == null }.map { it.id }
     override suspend fun markPhotosCleared(ids: List<String>) = rows.update { m ->
@@ -129,6 +131,35 @@ class RoomScanRepositoryTest {
         assertFalse(repo.scan("done").first()!!.hasSavedPhotos)
         assertTrue(repo.scan("busy").first()!!.hasSavedPhotos)
         assertEquals(500L, repo.usage.first().savedPhotoBytes)
+    }
+
+    @Test
+    fun highDetailSwapsTheMeshAndEndsProcessing() = runTest {
+        repo.add(scan("a"), tiny)
+        repo.setProcessing("a", 0)
+        repo.setProcessing("a", 42)
+        assertEquals(42, repo.scan("a").first()!!.processingPercent)
+        val cube = SampleMeshes.create(SampleShape.CUBE)
+        repo.completeHighDetail("a", cube)
+        val s = repo.scan("a").first()!!
+        assertEquals(ResultQuality.HIGH_DETAIL, s.quality)
+        assertNull(s.processingPercent)
+        assertEquals(cube.triangleCount, s.triangleCount)
+        assertEquals(cube.bounds().size, s.size)
+        assertEquals(cube.triangleCount, repo.loadMesh("a")!!.triangleCount)
+        // A scan deleted while processing stays deleted.
+        repo.delete("a")
+        repo.completeHighDetail("a", cube)
+        assertNull(repo.scan("a").first())
+    }
+
+    @Test
+    fun scaleChecksAreRememberedForHighDetail() = runTest {
+        repo.add(scan("a"), tiny)
+        val folder = ScanFolder(fs, root / "a")
+        folder.writeCaptureInfo(CaptureInfo.of(BoxSize(50.0, 50.0, 50.0), depthScale = null))
+        repo.applyScale("a", 1.02, "98 mm")
+        assertEquals(1.02, folder.readCaptureInfo()!!.scaleFactor, 1e-12)
     }
 
     @Test

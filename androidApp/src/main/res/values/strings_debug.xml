@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Settings › Developer (debug builds only): not translated. -->
+<resources>
+    <string name="settings_developer" translatable="false">Developer</string>
+    <string name="dev_add_samples" translatable="false">Add sample scans</string>
+    <string name="dev_add_samples_sub" translatable="false">5 scans</string>
+    <string name="dev_simulate_scan" translatable="false">Simulate a scan</string>
+    <string name="dev_simulate_scan_sub" translatable="false">Cylinder on a table, with keyframes for High detail</string>
+    <string name="dev_simulate_scan_running" translatable="false">Simulating…</string>
+    <string name="dev_fail_high_detail" translatable="false">Make next High detail fail</string>
+    <string name="dev_fail_high_detail_sub" translatable="false">Stops at Building fine mesh, as if out of memory</string>
+    <string name="dev_low_storage" translatable="false">Pretend storage is low</string>
+    <string name="dev_low_storage_sub" translatable="false">Free space reads as 1.2 GB (High detail needs ~2 GB)</string>
+</resources>

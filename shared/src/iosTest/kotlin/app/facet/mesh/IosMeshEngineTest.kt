@@ -1,6 +1,18 @@
 package app.facet.mesh
 
+import app.facet.data.FakeScanRepository
+import app.facet.data.ResultQuality
+import app.facet.data.Scan
+import app.facet.data.ScanFolder
 import app.facet.geometry.BoxSize
+import app.facet.platform.ProcessingStatus
+import app.facet.processing.HighDetailProcessor
+import app.facet.settings.AppSettings
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import okio.Path.Companion.toPath
+import okio.fakefilesystem.FakeFileSystem
+import kotlin.time.Instant
 import app.facet.scan.ScanTuning
 import app.facet.scan.SimulatedScan
 import kotlin.test.Test
@@ -76,6 +88,40 @@ class IosMeshEngineTest {
         assertEquals(SimulatedScan.HEIGHT, size.heightMm, 4.0)
         assertEquals(0.0, out.mesh.bounds().min.z, 1e-6)
         assertTrue(out.repaired, "watertight mesh should pass Manifold")
+    }
+
+    @Test
+    fun highDetailRebuildsTheSimulatedScanFromItsKeyframes() = runBlocking {
+        // A smaller voxel cap than the phone's keeps the test quick; the path is the same.
+        val tuning = ScanTuning(highDetail = ScanTuning.HighDetail(maxVoxels = 2_000_000))
+        val fs = FakeFileSystem()
+        val folder = ScanFolder(fs, "/scans/sim".toPath())
+        val repo = FakeScanRepository()
+        val quick = ScanPipeline(engine).finalMesh(
+            SimulatedScan.run(engine, tuning, folder)!!,
+            tuning.cleanup.params(watertight = true, smoothing = Smoothing.LOW, hasTable = true),
+        ).mesh
+        repo.add(
+            Scan("sim", "Sim", Instant.fromEpochMilliseconds(0), ResultQuality.QUICK, size = quick.bounds().size, triangleCount = quick.triangleCount),
+            quick,
+        )
+        var t = 0L
+        val processor = HighDetailProcessor(engine, repo, { folder }, { AppSettings(watertight = true) }, tuning) { t += 10; t }
+        assertEquals(ProcessingStatus.Succeeded, processor.run("sim") {})
+
+        val scan = repo.scan("sim").first()!!
+        assertEquals(ResultQuality.HIGH_DETAIL, scan.quality)
+        val size = scan.size
+        println("high detail: ${size.widthMm} × ${size.depthMm} × ${size.heightMm} mm, ${scan.triangleCount} triangles (quick ${quick.triangleCount})")
+        // Carved from the masks: the cylinder alone, no table or crumb.
+        val d = 2 * SimulatedScan.RADIUS
+        assertEquals(d, size.widthMm, 4.0)
+        assertEquals(d, size.depthMm, 4.0)
+        // A visual hull can't close a flat top: only the lowest views (20° here) bound it, so it may
+        // stand up to radius · tan(20°) ≈ 13 mm proud. Spike finding: the fine method must intersect
+        // the hull with the depth surface. Until then this is what the placeholder gives.
+        assertTrue(size.heightMm >= SimulatedScan.HEIGHT - 2, "height ${size.heightMm}")
+        assertTrue(size.heightMm <= SimulatedScan.HEIGHT + 2 + SimulatedScan.RADIUS * kotlin.math.tan(20 * kotlin.math.PI / 180), "height ${size.heightMm}")
     }
 
     private fun unitCube(s: Float): Mesh {

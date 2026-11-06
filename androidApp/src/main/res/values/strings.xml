@@ -273,6 +273,17 @@
 
     <!-- Processing -->
     <string name="proc_time_left">~%1$d min left</string>
+    <string name="proc_time_left_short">Less than a minute left</string>
+    <string name="proc_starting">Starting…</string>
+    <string name="proc_subtitle">High detail</string>
+    <plurals name="proc_photos">
+        <item quantity="one">%d photo</item>
+        <item quantity="other">%d photos</item>
+    </plurals>
+    <string name="cd_proc_progress">%1$d%% done</string>
+    <string name="cd_stage_done">%1$s, done</string>
+    <string name="cd_stage_current">%1$s, in progress</string>
+    <string name="cd_stage_todo">%1$s, to do</string>
     <string name="stage_align">Aligning photos</string>
     <string name="stage_depth">Depth maps</string>
     <string name="stage_mesh">Building fine mesh</string>
@@ -284,8 +295,19 @@
     <string name="notif_channel_processing">Processing</string>
     <string name="notif_processing">Processing %1$s · %2$d%%</string>
     <string name="notif_ready">%1$s is ready</string>
+    <string name="notif_ready_body">High detail is done. Tap to open it.</string>
+    <string name="notif_failed_body">%1$s · Your scan and photos are safe.</string>
+    <string name="notif_channel_results">Finished scans</string>
     <string name="fail_title">High detail couldn\'t finish</string>
     <string name="fail_body_memory">The phone ran out of memory while building the fine mesh (step %1$d of %2$d). Your scan and photos are safe.</string>
+    <string name="fail_body_no_photos">The saved photos for this scan are missing, so there is nothing to rebuild from. Your Quick result is safe.</string>
+    <string name="fail_body_old_photos">These photos were saved by an older version of Facet and can\'t be used for High detail. Your Quick result is safe.</string>
+    <string name="fail_body_empty">High detail couldn\'t find the object in the photos (step %1$d of %2$d). Your scan and photos are safe.</string>
+    <string name="fail_body_storage">The phone ran out of space while saving (step %1$d of %2$d). Your scan and photos are safe.</string>
+    <string name="fail_body_interrupted">The phone stopped the work before it finished (step %1$d of %2$d). Your scan and photos are safe.</string>
+    <string name="fail_body_unknown">Something went wrong (step %1$d of %2$d). Your scan and photos are safe.</string>
+    <string name="fail_help_storage">• Free up some space, then try again\n• Clear saved photos from older scans in Settings › Storage</string>
+    <string name="error_copied">Error details copied</string>
     <string name="fail_help_title">Things that help</string>
     <string name="fail_help_body">• Close other apps, then try again\n• Let the phone cool down if it\'s warm\n• Crop the box tighter to just the object</string>
     <string name="try_again">Try again</string>
@@ -357,4 +379,6 @@
     <string name="low_storage_photos">Saved photos from older scans use %1$s.</string>
     <string name="free_up_space">Free up space</string>
     <string name="keep_quick">Keep Quick result</string>
+    <string name="low_storage_free">%1$s free</string>
+    <string name="low_storage_needs">needs ~%1$s</string>
 </resources>

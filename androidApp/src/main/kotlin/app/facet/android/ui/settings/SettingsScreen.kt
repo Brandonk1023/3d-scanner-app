@@ -241,12 +241,28 @@ fun SettingsScreen(onBack: () -> Unit, onNativeLibraries: () -> Unit, onOpenScan
                                 if (!simulating) {
                                     simulating = true
                                     scope.launch {
-                                        val id = container.scans.addSimulatedScan(container.meshEngine, s)
+                                        val id = container.scans.addSimulatedScan(container.meshEngine, s, folder = container::scanFolder)
                                         simulating = false
                                         if (id != null) onOpenScan(id)
                                     }
                                 }
                             },
+                        )
+                        ListDivider()
+                        var failNext by remember { mutableStateOf(container.debug.failNextHighDetail) }
+                        SwitchRow(
+                            stringResource(R.string.dev_fail_high_detail),
+                            stringResource(R.string.dev_fail_high_detail_sub),
+                            checked = failNext,
+                            onCheckedChange = { failNext = it; container.debug.failNextHighDetail = it },
+                        )
+                        ListDivider()
+                        var lowStorage by remember { mutableStateOf(container.debug.pretendLowStorage) }
+                        SwitchRow(
+                            stringResource(R.string.dev_low_storage),
+                            stringResource(R.string.dev_low_storage_sub),
+                            checked = lowStorage,
+                            onCheckedChange = { lowStorage = it; container.debug.pretendLowStorage = it },
                         )
                     }
                 }

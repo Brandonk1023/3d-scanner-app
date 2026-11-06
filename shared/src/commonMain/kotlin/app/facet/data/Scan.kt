@@ -57,6 +57,15 @@ interface ScanRepository {
      * ("1 € coin", "98.0 mm"). Does nothing if the scan or its mesh is missing.
      */
     suspend fun applyScale(id: String, factor: Double, reference: String)
+
+    /** Gallery "Processing NN%": 0..100 while High detail runs, null once it stops (any outcome). */
+    suspend fun setProcessing(id: String, percent: Int?)
+
+    /**
+     * Swaps in the High detail mesh: model and thumbnail first, then the record (quality High detail,
+     * processing over, new size and triangle count). Does nothing if the scan was deleted meanwhile.
+     */
+    suspend fun completeHighDetail(id: String, mesh: Mesh)
     suspend fun delete(id: String)
     /** Deletes every scan's keyframes; those scans can no longer be reprocessed. */
     suspend fun clearSavedPhotos()

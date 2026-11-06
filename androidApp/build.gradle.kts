@@ -67,6 +67,8 @@ dependencies {
 
     // ARCore: installed/updated through the Play Store (ArCoreApk) — the app itself has no network access.
     implementation(libs.arcore)
+    // High detail runs as expedited / foreground work (survives leaving the app).
+    implementation(libs.androidx.work.runtime)
 
     // On-device object outlines for silhouette carving (model bundled in assets; no network).
     implementation(libs.mediapipe.tasks.vision)

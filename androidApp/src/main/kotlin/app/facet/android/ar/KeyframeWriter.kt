@@ -122,7 +122,7 @@ internal class KeyframeWriter(
         }
         File(dir, "$name.jpg").writeBytes(jpeg)
         written += jpeg.size
-        written += segment(name, jpeg, width, height, cameraToBox, fx, fy, cx, cy)
+        val mask = segment(name, jpeg, width, height, cameraToBox, fx, fy, cx, cy)
 
         val json = JSONObject()
             .put("timestampNs", timestampNs)
@@ -143,6 +143,10 @@ internal class KeyframeWriter(
                     .put("format", "uint16le mm, then uint8 confidence" + if (depth.confidence == null) " (absent)" else ""),
             )
         }
+        if (mask != null) {
+            json.put("mask", mask)
+            written += File(dir, mask.getString("file")).length()
+        }
         File(dir, "$name.json").writeText(json.toString())
         written += File(dir, "$name.json").length()
 
@@ -151,11 +155,14 @@ internal class KeyframeWriter(
         lastPose = cameraToBox
     }
 
-    /** Finds the object's outline and hands it to carving. Returns bytes written (the saved mask). */
-    private fun segment(name: String, jpeg: ByteArray, width: Int, height: Int, cameraToBox: FloatArray, fx: Float, fy: Float, cx: Float, cy: Float): Long {
-        val factory = segmenterFactory ?: return 0
+    /**
+     * Finds the object's outline and hands it to carving. Returns the saved mask's entry for the
+     * keyframe JSON (file, size, intrinsics scaled to the mask), or null if there is none.
+     */
+    private fun segment(name: String, jpeg: ByteArray, width: Int, height: Int, cameraToBox: FloatArray, fx: Float, fy: Float, cx: Float, cy: Float): JSONObject? {
+        val factory = segmenterFactory ?: return null
         val seg = segmenter ?: runCatching(factory).onFailure { Log.w(TAG, "Segmenter unavailable", it) }.getOrNull()?.also { segmenter = it }
-            ?: return 0
+            ?: return null
         // Seed: the point inside the object, projected into this photo.
         val s = seedInBox
         val m = cameraToBox
@@ -165,12 +172,12 @@ internal class KeyframeWriter(
         val camX = m[0] * dx + m[1] * dy + m[2] * dz
         val camY = m[4] * dx + m[5] * dy + m[6] * dz
         val camZ = m[8] * dx + m[9] * dy + m[10] * dz
-        if (camZ >= -1f) return 0 // behind the camera
+        if (camZ >= -1f) return null // behind the camera
         val seedX = (fx * camX / -camZ + cx) / width
         val seedY = (cy - fy * camY / -camZ) / height
-        if (seedX !in 0f..1f || seedY !in 0f..1f) return 0
-        val mask = seg.segment(jpeg, seedX, seedY) ?: return 0
-        if (!mask.plausible(seedX, seedY, reconstruction)) return 0
+        if (seedX !in 0f..1f || seedY !in 0f..1f) return null
+        val mask = seg.segment(jpeg, seedX, seedY) ?: return null
+        if (!mask.plausible(seedX, seedY, reconstruction)) return null
         masks.incrementAndGet()
         val sx = mask.width.toFloat() / width
         val sy = mask.height.toFloat() / height
@@ -178,7 +185,8 @@ internal class KeyframeWriter(
         // Kept for High detail (and debugging): raw bytes, 1 = object.
         val file = File(dir, "$name.mask")
         file.writeBytes(mask.pixels)
-        return file.length()
+        return JSONObject().put("file", file.name).put("width", mask.width).put("height", mask.height)
+            .put("fx", fx * sx).put("fy", fy * sy).put("cx", cx * sx).put("cy", cy * sy)
     }
 
     fun close() {

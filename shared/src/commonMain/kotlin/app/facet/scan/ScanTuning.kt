@@ -20,6 +20,7 @@ data class ScanTuning(
     val keyframes: Keyframes = Keyframes(),
     val storage: Storage = Storage(),
     val scale: Scale = Scale(),
+    val highDetail: HighDetail = HighDetail(),
 ) {
     data class Placement(
         /** Depth points within this radius of the tap seed the auto-sized box. */
@@ -205,6 +206,31 @@ data class ScanTuning(
         val highDetailEstimateBytes: Long = 2_048L * MB,
     )
 
+    /**
+     * High detail background pass (docs/04 §4). The fine-mesh method is still a research spike: for
+     * now the saved depth is re-fused at [highDetailVoxelMm] and carved with the saved masks.
+     */
+    data class HighDetail(
+        /** Fine volume voxel cap (12 bytes each in the native TSDF ≈ 145 MB); the voxel grows past D/600 to stay under it. */
+        val maxVoxels: Int = 12_000_000,
+        /**
+         * Share of the overall progress per stage: Aligning photos, Depth maps, Building fine mesh,
+         * Cleanup & watertight. Guesses until timed on the phone.
+         */
+        val stageWeights: List<Double> = listOf(0.05, 0.15, 0.65, 0.15),
+        /** "~N min left" appears once this much is done and this long has passed. */
+        val etaMinProgress: Float = 0.05f,
+        val etaMinElapsedMs: Long = 5_000,
+        /** The gallery card's "Processing NN%" is written to the database in steps of this many percent. */
+        val galleryPercentStep: Int = 2,
+        /** The result is decimated to at most this many triangles (Quick: 200k). */
+        val targetTriangles: Int = 500_000,
+    ) {
+        init {
+            require(stageWeights.size == 4 && stageWeights.all { it > 0 }) { "one positive weight per stage" }
+        }
+    }
+
     data class Scale(
         /** Warn when a scale correction exceeds ± this fraction. */
         val warnCorrectionAbove: Double = 0.10,
@@ -236,6 +262,17 @@ data class ScanTuning(
 
     fun highDetailVoxelMm(box: BoxSize): Double = with(reconstruction) {
         (box.diagonalMm / highDetailVoxelDivisor).coerceIn(highDetailVoxelMinMm, highDetailVoxelMaxMm)
+    }
+
+    /** High detail's fine voxel for a volume this size, grown if needed to stay under [HighDetail.maxVoxels]. */
+    fun highDetailVolumeVoxelMm(volume: BoxSize): Double {
+        val cap = kotlin.math.cbrt(volume.widthMm * volume.depthMm * volume.heightMm / highDetail.maxVoxels)
+        return maxOf(highDetailVoxelMm(volume), cap)
+    }
+
+    /** The fusion volume around a placed box: margins on the sides and on top so carving doesn't clip the object. */
+    fun volumeSize(box: BoxSize): BoxSize = with(reconstruction) {
+        BoxSize(box.widthMm + 2 * volumeMarginSideMm, box.depthMm + 2 * volumeMarginSideMm, box.heightMm + volumeMarginTopMm)
     }
 
     /** Band for a camera elevation above the table, or null if outside every band (above 80°). */

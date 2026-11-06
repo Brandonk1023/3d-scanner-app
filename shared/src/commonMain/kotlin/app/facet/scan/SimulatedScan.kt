@@ -1,9 +1,12 @@
 package app.facet.scan
 
+import app.facet.data.CaptureInfo
+import app.facet.data.ScanFolder
 import app.facet.geometry.BoxSize
 import app.facet.mesh.DepthFrame
 import app.facet.mesh.Mesh
 import app.facet.mesh.MeshEngine
+import app.facet.mesh.ObjectMask
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.cos
@@ -17,6 +20,9 @@ import kotlin.random.Random
  * fusion and the final-mesh cleanup. A cylinder (70 mm across, 70 mm tall) stands on a table that
  * sits [TABLE_Z] mm above the box base (a slightly-off placed plane), next to an 8 mm crumb that
  * cleanup should drop. 36 noisy depth frames from above the table, like a real walk-around.
+ *
+ * With [keyframes], every frame is also saved like capture's keyframes (depth, pose and an object
+ * mask, no photo) plus `capture.json`, so High detail can reprocess the scan.
  *
  * Returns the raw mesh in the box frame, table included (cleanup's job), or null if fusion failed.
  */
@@ -35,19 +41,22 @@ object SimulatedScan {
     private const val F = 140f
     private const val NOISE_MM = 2.0
 
-    fun run(engine: MeshEngine, tuning: ScanTuning = ScanTuning.Default): Mesh? {
+    fun run(engine: MeshEngine, tuning: ScanTuning = ScanTuning.Default, keyframes: ScanFolder? = null): Mesh? {
         val voxel = tuning.liveVoxelMm(box)
         val volume = engine.createVolume(box, voxel, tuning.truncationMm(voxel)) ?: return null
         try {
             val random = Random(7)
+            var index = 0
+            keyframes?.writeCaptureInfo(CaptureInfo.of(box, depthScale = 1.0))
             for (elevation in doubleArrayOf(20.0, 45.0, 70.0)) {
                 for (az in 0 until 360 step 30) {
                     val e = elevation * PI / 180
                     val a = az * PI / 180
                     val target = V(0.0, 0.0, TABLE_Z + HEIGHT / 2)
                     val eye = target + V(cos(e) * cos(a), cos(e) * sin(a), sin(e)) * 300.0
-                    val (frame, cameraToBox) = render(eye, target, random)
+                    val (frame, cameraToBox, mask) = render(eye, target, random)
                     volume.integrate(frame, cameraToBox, 0f)
+                    keyframes?.writeKeyframe(++index, cameraToBox, frame, depthScale = 1.0, mask = mask)
                 }
             }
             return volume.extract(1, tuning.reconstruction.meshMinWeight).takeIf { it.triangleCount > 0 }
@@ -64,8 +73,10 @@ object SimulatedScan {
         fun norm(): V = this * (1 / sqrt(x * x + y * y + z * z))
     }
 
-    /** One depth frame (mm along the optical axis) and its camera → box matrix. */
-    private fun render(eye: V, target: V, random: Random): Pair<DepthFrame, FloatArray> {
+    private data class Rendered(val frame: DepthFrame, val cameraToBox: FloatArray, val mask: ObjectMask)
+
+    /** One depth frame (mm along the optical axis), its camera → box matrix and the cylinder's outline. */
+    private fun render(eye: V, target: V, random: Random): Rendered {
         val back = (eye - target).norm()
         val right = V(0.0, 0.0, 1.0).cross(back).norm()
         val up = back.cross(right)
@@ -76,27 +87,39 @@ object SimulatedScan {
             eye.x.toFloat(), eye.y.toFloat(), eye.z.toFloat(), 1f,
         )
         val depth = ShortArray(W * H)
+        val mask = ByteArray(W * H)
         val cx = W / 2.0
         val cy = H / 2.0
         for (v in 0 until H) {
             for (u in 0 until W) {
                 val d = right * ((u + 0.5 - cx) / F) + up * (-(v + 0.5 - cy) / F) - back
-                val t = hit(eye, d) ?: continue
+                val (t, onObject) = hit(eye, d) ?: continue
                 depth[v * W + u] = (t + random.nextDouble(-NOISE_MM, NOISE_MM)).roundToInt().toShort()
+                if (onObject) mask[v * W + u] = 1
             }
         }
-        return DepthFrame(W, H, depth, null, F, F, cx.toFloat(), cy.toFloat()) to m
+        return Rendered(DepthFrame(W, H, depth, null, F, F, cx.toFloat(), cy.toFloat()), m, ObjectMask(W, H, mask))
     }
 
-    /** Nearest hit along eye + t·d (t = depth, since d has forward component 1). */
-    private fun hit(eye: V, d: V): Double? {
+    /**
+     * Nearest hit along eye + t·d (t = depth, since d has forward component 1), and whether it is
+     * on the cylinder (what a segmenter would outline).
+     */
+    private fun hit(eye: V, d: V): Pair<Double, Boolean>? {
         var best = Double.MAX_VALUE
-        fun plane(z: Double, inside: (Double, Double) -> Boolean) {
+        var cylinder = false
+        fun take(t: Double, onCylinder: Boolean) {
+            if (t > 0 && t < best) {
+                best = t
+                cylinder = onCylinder
+            }
+        }
+        fun plane(z: Double, onCylinder: Boolean, inside: (Double, Double) -> Boolean) {
             if (d.z >= 0) return
             val t = (z - eye.z) / d.z
-            if (t > 0 && t < best && inside(eye.x + d.x * t, eye.y + d.y * t)) best = t
+            if (inside(eye.x + d.x * t, eye.y + d.y * t)) take(t, onCylinder)
         }
-        plane(TABLE_Z) { x, y -> abs(x) < 400 && abs(y) < 400 }
+        plane(TABLE_Z, onCylinder = false) { x, y -> abs(x) < 400 && abs(y) < 400 }
         // Cylinder side wall and top.
         val ox = eye.x - CYL_X
         val a = d.x * d.x + d.y * d.y
@@ -106,11 +129,11 @@ object SimulatedScan {
         if (a > 0 && disc >= 0) {
             val t = (-b - sqrt(disc)) / (2 * a)
             val z = eye.z + d.z * t
-            if (t > 0 && t < best && z >= TABLE_Z && z <= TABLE_Z + HEIGHT) best = t
+            if (z >= TABLE_Z && z <= TABLE_Z + HEIGHT) take(t, onCylinder = true)
         }
-        plane(TABLE_Z + HEIGHT) { x, y -> (x - CYL_X) * (x - CYL_X) + y * y <= RADIUS * RADIUS }
+        plane(TABLE_Z + HEIGHT, onCylinder = true) { x, y -> (x - CYL_X) * (x - CYL_X) + y * y <= RADIUS * RADIUS }
         // The crumb's top (its sides are too small to matter).
-        plane(TABLE_Z + CRUMB) { x, y -> abs(x - CRUMB_X) <= CRUMB / 2 && abs(y - CRUMB_Y) <= CRUMB / 2 }
-        return best.takeIf { it < Double.MAX_VALUE }
+        plane(TABLE_Z + CRUMB, onCylinder = false) { x, y -> abs(x - CRUMB_X) <= CRUMB / 2 && abs(y - CRUMB_Y) <= CRUMB / 2 }
+        return if (best < Double.MAX_VALUE) best to cylinder else null
     }
 }

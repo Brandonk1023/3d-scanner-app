@@ -3,13 +3,11 @@ package app.facet.android.nav
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import app.facet.android.R
 import app.facet.android.appContainer
 import app.facet.android.ui.device.DeviceCheckScreen
 import app.facet.android.ui.export.ExportScreen
@@ -18,12 +16,13 @@ import app.facet.android.ui.onboarding.ONBOARDING_PAGES
 import app.facet.android.ui.onboarding.OnboardingScreen
 import app.facet.android.ui.permission.CameraPermissionScreen
 import app.facet.android.ui.permission.hasCameraPermission
+import app.facet.android.processing.DeepLink
+import app.facet.android.processing.DeepLinkTarget
+import app.facet.android.ui.processing.ProcessingScreen
 import app.facet.android.ui.scan.ScanScreen
 import app.facet.android.ui.settings.NativeLibrariesScreen
 import app.facet.android.ui.scale.ScaleCheckScreen
 import app.facet.android.ui.settings.SettingsScreen
-import app.facet.android.ui.stub.StubLink
-import app.facet.android.ui.stub.StubScreen
 import app.facet.android.ui.theme.FacetTheme
 import app.facet.android.ui.viewer.ViewerScreen
 import app.facet.data.ScanStatus
@@ -32,13 +31,15 @@ import app.facet.platform.DeviceSupport
 import app.facet.settings.ThemeMode
 
 /**
- * Navigation graph (design/docs/02-user-flow.md). Phase 1: real screens for first launch, gallery,
- * settings, viewer and export; Phase 2: scan placement; Phase 6: manual scale check. Processing stays a stub.
+ * Navigation graph (design/docs/02-user-flow.md). [deepLink]: a notification tap (High detail ready
+ * → viewer, failed → processing), handled once via [onDeepLinkHandled].
  */
 @Composable
 fun FacetNavHost(
     startAtGallery: Boolean,
     onOnboardingComplete: () -> Unit,
+    deepLink: DeepLink? = null,
+    onDeepLinkHandled: () -> Unit = {},
     nav: NavHostController = rememberNavController(),
 ) {
     val context = LocalContext.current
@@ -61,6 +62,18 @@ fun FacetNavHost(
                 nav.navigate(DeviceCheck(fromOnboarding = false))
             }
         }
+    }
+
+    // Notification taps (only once onboarding is done: the gallery is then the start screen).
+    LaunchedEffect(deepLink) {
+        val link = deepLink ?: return@LaunchedEffect
+        onDeepLinkHandled()
+        if (!startAtGallery) return@LaunchedEffect
+        val route: Any = when (link.target) {
+            DeepLinkTarget.VIEWER -> Viewer(link.scanId)
+            DeepLinkTarget.PROCESSING -> Processing(link.scanId)
+        }
+        nav.navigate(route) { popUpTo(Gallery) }
     }
 
     NavHost(navController = nav, startDestination = if (startAtGallery) Gallery else Onboarding(1)) {
@@ -112,7 +125,7 @@ fun FacetNavHost(
                 onOpenScan = { scan ->
                     if (scan.status == ScanStatus.PROCESSING) nav.navigate(Processing(scan.id)) else nav.navigate(Viewer(scan.id))
                 },
-                onReprocess = { nav.navigate(Processing(it.id)) },
+                onReprocess = { nav.navigate(Processing(it.id, start = true)) },
                 onExport = { nav.navigate(Export(it.id)) },
                 onSettings = { nav.navigate(Settings) },
                 onTips = { nav.navigate(Onboarding(page = 2, tipsOnly = true)) },
@@ -137,9 +150,9 @@ fun FacetNavHost(
                 ScanScreen(
                     onClose = { nav.popBackStack() },
                     onResult = { scanId, mode ->
-                        // TODO(Phase 7): High detail processing; Phase 4: real Quick result.
+                        // The Quick result is saved either way; High detail then upgrades it.
                         if (mode == ResultMode.HIGH_DETAIL) {
-                            nav.navigate(Processing(scanId)) { popUpTo(Gallery) }
+                            nav.navigate(Processing(scanId, start = true)) { popUpTo(Gallery) }
                         } else {
                             nav.navigate(Viewer(scanId)) { popUpTo(Gallery) }
                         }
@@ -149,17 +162,14 @@ fun FacetNavHost(
         }
 
         composable<Processing> { entry ->
-            val scanId = entry.toRoute<Processing>().scanId
-            StubScreen(
-                title = stringResource(R.string.stub_processing_title, scanId),
-                reference = "Processing.png, Processing-Failed.png, Low-Storage.png",
+            val route = entry.toRoute<Processing>()
+            ProcessingScreen(
+                scanId = route.scanId,
+                start = route.start,
                 onBack = { nav.popBackStack() },
-                links = listOf(
-                    StubLink(R.string.stub_processing_done, primary = true) {
-                        nav.navigate(Viewer(scanId)) { popUpTo(Gallery) }
-                    },
-                    StubLink(R.string.proc_notify) { nav.popBackStack(Gallery, inclusive = false) },
-                ),
+                onOpenViewer = { nav.navigate(Viewer(route.scanId)) { popUpTo(Gallery) } },
+                onLeave = { if (!nav.popBackStack(Gallery, inclusive = false)) nav.navigate(Gallery) },
+                onFreeUpSpace = { nav.navigate(Settings) },
             )
         }
 
@@ -170,7 +180,7 @@ fun FacetNavHost(
                 onBack = { nav.popBackStack() },
                 onExport = { nav.navigate(Export(scanId)) },
                 onCheckScale = { nav.navigate(ScaleCheck(scanId)) },
-                onHighDetail = { nav.navigate(Processing(scanId)) },
+                onHighDetail = { nav.navigate(Processing(scanId, start = true)) },
             )
         }
 

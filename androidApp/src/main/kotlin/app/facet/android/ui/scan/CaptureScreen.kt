@@ -89,6 +89,7 @@ import app.facet.android.ui.theme.Facet
 import app.facet.android.ui.theme.Radius
 import app.facet.android.ui.theme.Sizes
 import app.facet.android.ui.theme.Space
+import app.facet.data.CaptureInfo
 import app.facet.data.ResultQuality
 import app.facet.data.Scan
 import app.facet.export.ExportFormat
@@ -216,13 +217,17 @@ internal fun CaptureLayer(
             ScanPipeline(container.meshEngine).finalMesh(raw.mesh, cleanup).mesh
         }
         val id = engine.scanDir.name
+        // High detail needs the box its keyframe poses refer to, and the depth calibration.
+        withContext(Dispatchers.IO) {
+            runCatching { container.scanFolder(id).writeCaptureInfo(CaptureInfo.of(engine.box.size, engine.calibratedDepthScale)) }
+        }
+        // Saved as Quick either way: High detail (if chosen) upgrades it from the Processing screen.
         container.scans.add(
             Scan(
                 id = id,
                 name = container.scans.nextScanName(),
                 createdAt = Clock.System.now(),
-                quality = if (mode == ResultMode.HIGH_DETAIL) ResultQuality.HIGH_DETAIL else ResultQuality.QUICK,
-                processingPercent = if (mode == ResultMode.HIGH_DETAIL) 0 else null,
+                quality = ResultQuality.QUICK,
                 size = mesh.bounds().size,
                 triangleCount = mesh.triangleCount,
                 hasSavedPhotos = engine.keyframeCount > 0,

@@ -84,6 +84,9 @@ class CaptureEngine internal constructor(
     /** Set by the UI: dim the mesh (tracking lost). */
     @Volatile var dimmed: Boolean = false
 
+    /** The locked depth calibration, for High detail (capture.json); null if the table was never measured. */
+    val calibratedDepthScale: Double? get() = depthScale
+
     val keyframeCount: Int get() = keyframes.savedCount
     val keyframeBytes: Long get() = keyframes.savedBytes
 

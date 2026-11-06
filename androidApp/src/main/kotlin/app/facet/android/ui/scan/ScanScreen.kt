@@ -102,7 +102,6 @@ import app.facet.scan.ResultMode
 import app.facet.scan.ScanTuning
 import app.facet.android.ar.CaptureEngine
 import app.facet.android.ar.MediaPipeSegmenter
-import app.facet.geometry.BoxSize
 import androidx.compose.runtime.DisposableEffect
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -136,10 +135,7 @@ fun ScanScreen(onClose: () -> Unit, onResult: (scanId: String, mode: ResultMode)
         vm.consumeStarted()
         val tuning = ScanTuning.Default
         // The volume reaches past the placed box so carving doesn't clip the object's top and sides.
-        val r = tuning.reconstruction
-        val volumeSize = setup.box.size.let {
-            BoxSize(it.widthMm + 2 * r.volumeMarginSideMm, it.depthMm + 2 * r.volumeMarginSideMm, it.heightMm + r.volumeMarginTopMm)
-        }
+        val volumeSize = tuning.volumeSize(setup.box.size)
         val voxel = tuning.liveVoxelMm(volumeSize)
         val volume = withContext(Dispatchers.Default) {
             runCatching { container.meshEngine.createVolume(volumeSize, voxel, tuning.truncationMm(voxel)) }.getOrNull()

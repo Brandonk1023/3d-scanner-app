@@ -1,5 +1,6 @@
 package app.facet.android
 
+import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -16,24 +17,41 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import app.facet.android.nav.FacetNavHost
+import app.facet.android.processing.DeepLink
+import app.facet.android.processing.ProcessingNotifications
 import app.facet.android.ui.theme.Facet
 import app.facet.android.ui.theme.FacetTheme
 import app.facet.android.ui.theme.isDarkTheme
 import app.facet.settings.AppSettings
 import app.facet.settings.SettingsRepository
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    /** A High detail notification tap waiting to be navigated to. */
+    private val deepLink = MutableStateFlow<DeepLink?>(null)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // Not on recreation (rotation, theme change): the tap was handled already.
+        if (savedInstanceState == null) deepLink.value = ProcessingNotifications.deepLink(intent)
+        ProcessingNotifications(applicationContext).ensureChannels()
+        // Scans left "Processing" by a force-stopped run go back to their Quick result.
+        lifecycleScope.launch { runCatching { appContainer.backgroundProcessor.reconcile() } }
         val settingsRepo = appContainer.settings
         setContent {
             val settings by settingsRepo.settings.collectAsStateWithLifecycle(initialValue = null as AppSettings?)
             // DataStore takes a few ms on cold start; only the window background shows meanwhile.
             settings?.let { FacetContent(it, settingsRepo) }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        ProcessingNotifications.deepLink(intent)?.let { deepLink.value = it }
     }
 
     @Composable
@@ -50,11 +68,14 @@ class MainActivity : ComponentActivity() {
         // Decided once per launch: changing NavHost's start destination later would reset the graph.
         val startAtGallery = rememberSaveable { settings.onboardingDone }
         val scope = rememberCoroutineScope()
+        val link by deepLink.collectAsStateWithLifecycle()
         FacetTheme(themeMode = settings.themeMode) {
             Box(Modifier.fillMaxSize().background(Facet.colors.bg)) {
                 FacetNavHost(
                     startAtGallery = startAtGallery,
                     onOnboardingComplete = { scope.launch { settingsRepo.update { it.copy(onboardingDone = true) } } },
+                    deepLink = link,
+                    onDeepLinkHandled = { deepLink.value = null },
                 )
             }
         }

@@ -81,6 +81,9 @@ interface ScanDao {
     @Query("UPDATE scans SET name = :name WHERE id = :id")
     suspend fun rename(id: String, name: String)
 
+    @Query("UPDATE scans SET processingPercent = :percent WHERE id = :id")
+    suspend fun setProcessing(id: String, percent: Int?)
+
     @Query("DELETE FROM scans WHERE id = :id")
     suspend fun delete(id: String)
 

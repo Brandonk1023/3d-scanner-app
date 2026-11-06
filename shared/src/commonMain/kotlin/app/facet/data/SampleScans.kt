@@ -66,26 +66,30 @@ private const val MB = 1_000_000L
 /**
  * Debug builds: runs [SimulatedScan] through the real native fusion and the Quick result pipeline
  * (cleanup with the current Settings › Scanning values, repair, decimation) and saves it like a
- * real scan. Returns the new scan's id, or null if fusion produced nothing.
+ * real scan. With [folder], its keyframes are saved too so it can be reprocessed in High detail.
+ * Returns the new scan's id, or null if fusion produced nothing.
  */
 suspend fun ScanRepository.addSimulatedScan(
     engine: MeshEngine,
     settings: AppSettings,
     tuning: ScanTuning = ScanTuning.Default,
     clock: Clock = Clock.System,
+    folder: ((scanId: String) -> ScanFolder)? = null,
 ): String? {
+    val now = clock.now()
+    val id = "sim-${now.toEpochMilliseconds()}"
+    val files = folder?.invoke(id)
     val mesh = withContext(Dispatchers.Default) {
-        val raw = SimulatedScan.run(engine, tuning) ?: return@withContext null
+        val raw = SimulatedScan.run(engine, tuning, files) ?: return@withContext null
         val cleanup = tuning.cleanup.params(settings.watertight, settings.smoothing, hasTable = true)
         ScanPipeline(engine).finalMesh(raw, cleanup).mesh
     } ?: return null
-    val now = clock.now()
-    val id = "sim-${now.toEpochMilliseconds()}"
+    val photoBytes = files?.keyframeBytes() ?: 0
     add(
         Scan(
             id = id, name = nextScanName(), createdAt = now, quality = ResultQuality.QUICK,
-            size = mesh.bounds().size, triangleCount = mesh.triangleCount, hasSavedPhotos = false,
-            modelBytes = ExportFormat.STL.estimatedBytes(mesh),
+            size = mesh.bounds().size, triangleCount = mesh.triangleCount, hasSavedPhotos = photoBytes > 0,
+            modelBytes = ExportFormat.STL.estimatedBytes(mesh), photoBytes = photoBytes,
         ),
         mesh,
     )

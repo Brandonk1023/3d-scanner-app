@@ -53,6 +53,21 @@ class FakeScanRepository(clock: Clock = Clock.System) : ScanRepository {
         }
     }
 
+    override suspend fun setProcessing(id: String, percent: Int?) = edit(id) { it.copy(processingPercent = percent) }
+
+    override suspend fun completeHighDetail(id: String, mesh: Mesh) = entries.update { list ->
+        list.map {
+            if (it.scan.id != id) it
+            else Entry(
+                it.scan.copy(
+                    quality = ResultQuality.HIGH_DETAIL, processingPercent = null,
+                    size = mesh.bounds().size, triangleCount = mesh.triangleCount,
+                ),
+                shape = null, mesh = mesh,
+            )
+        }
+    }
+
     override suspend fun delete(id: String) = entries.update { list -> list.filterNot { it.scan.id == id } }
 
     override suspend fun clearSavedPhotos() = entries.update { list ->

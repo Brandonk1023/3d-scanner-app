@@ -89,17 +89,73 @@ data class SavedFile(
     val mimeType: String,
 )
 
-/** High detail processing that survives leaving the app (WorkManager / BGProcessingTask). */
+/**
+ * High detail processing that survives leaving the app (Android: WorkManager foreground work;
+ * iOS: BGProcessingTask, Phase 9). The work itself is [app.facet.processing.HighDetailProcessor].
+ */
 interface BackgroundProcessor {
-    fun start(scanId: String)
+    /**
+     * Queues High detail for [scanId]; does nothing if it is already queued or running. Returns once
+     * queued, so [observe] afterwards follows the new run rather than an earlier one.
+     */
+    suspend fun start(scanId: String)
     fun cancel(scanId: String)
+
+    /** The latest run for [scanId]; [ProcessingStatus.Idle] when there is none. */
     fun observe(scanId: String): Flow<ProcessingStatus>
 }
 
+/** The four stages shown on the Processing screen, in order. */
 enum class ProcessingStage { ALIGNING_PHOTOS, DEPTH_MAPS, BUILDING_FINE_MESH, CLEANUP }
 
+/** Why High detail stopped, in terms the failure screen can explain. */
+enum class FailureReason {
+    /** Native allocation failed or the process ran out of memory. */
+    OUT_OF_MEMORY,
+
+    /** No usable keyframes (none saved, or cleared). */
+    NO_PHOTOS,
+
+    /** Keyframes from an app version that didn't record the scan box (capture.json). */
+    OLD_PHOTOS,
+
+    /** Fusion produced no surface. */
+    EMPTY_RESULT,
+
+    /** Reading or writing files failed (usually a full disk). */
+    STORAGE,
+
+    /** The system stopped the work and it couldn't resume. */
+    INTERRUPTED,
+    UNKNOWN,
+}
+
 sealed interface ProcessingStatus {
-    data class Running(val stage: ProcessingStage, val progress: Float, val remainingSeconds: Int?) : ProcessingStatus
+    /** No run known for this scan (never started, cancelled, or long finished). */
+    data object Idle : ProcessingStatus
+
+    data class Running(val progress: ProcessingProgress) : ProcessingStatus
     data object Succeeded : ProcessingStatus
-    data class Failed(val reason: String, val technicalLog: String) : ProcessingStatus
+
+    /** [stage] is where it stopped (null = before it began); [technicalLog] is for "Copy error details". */
+    data class Failed(val reason: FailureReason, val stage: ProcessingStage?, val technicalLog: String) : ProcessingStatus
+}
+
+/**
+ * A running pass, as the Processing screen and the notification show it.
+ *
+ * - [overall]: 0..1 across all stages (weighted by ScanTuning.HighDetail.stageWeights)
+ * - [stageDurationsMs]: how long each finished stage took (index = stage ordinal)
+ * - [itemsDone] / [itemsTotal]: photos handled in the current stage (0 / 0 = no count)
+ */
+data class ProcessingProgress(
+    val stage: ProcessingStage = ProcessingStage.ALIGNING_PHOTOS,
+    val overall: Float = 0f,
+    val remainingSeconds: Int? = null,
+    val photoCount: Int? = null,
+    val stageDurationsMs: List<Long> = emptyList(),
+    val itemsDone: Int = 0,
+    val itemsTotal: Int = 0,
+) {
+    val percent: Int get() = (overall * 100).toInt().coerceIn(0, 100)
 }

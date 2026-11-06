@@ -25,8 +25,11 @@ import kotlinx.serialization.Serializable
 /** `scan` — placement → capture → finish, one route driven by the shared ScanSession state machine. */
 @Serializable data object Scan
 
-/** `processing/{scanId}` — High detail progress / failure / low storage. */
-@Serializable data class Processing(val scanId: String)
+/**
+ * `processing/{scanId}` — High detail progress / failure / low storage. [start]: begin High detail
+ * (after the storage check); otherwise only follow a run (gallery card, notification).
+ */
+@Serializable data class Processing(val scanId: String, val start: Boolean = false)
 
 /** `viewer/{scanId}` */
 @Serializable data class Viewer(val scanId: String)
