@@ -6,8 +6,8 @@ import app.facet.geometry.BoxSize
  * The shared C++ reconstruction core (native/), behind one interface.
  * Android: JNI (`AndroidMeshEngine`). iOS: Kotlin/Native cinterop (`IosMeshEngine`).
  *
- * Phase 3: TSDF volumes for live fusion, plus the mesh pipeline stages ([ScanPipeline] chains them):
- * Manifold repair, meshoptimizer decimation, STL / 3MF writers and Screened Poisson for photo mode.
+ * TSDF volumes for live fusion, plus the mesh pipeline stages ([ScanPipeline] chains them):
+ * cleanup, Manifold repair, meshoptimizer decimation, STL / 3MF writers and Screened Poisson for photo mode.
  */
 interface MeshEngine {
     /** Version string of the C++ core. */
@@ -27,6 +27,12 @@ interface MeshEngine {
      * failure the result carries the status and the input mesh unchanged.
      */
     fun repair(mesh: Mesh, options: RepairOptions = RepairOptions()): MeshResult
+
+    /**
+     * Table removal, largest piece, smoothing and hole filling ([CleanupParams]). On failure the
+     * result carries the status and the input mesh unchanged.
+     */
+    fun cleanup(mesh: Mesh, params: CleanupParams): MeshResult
 
     /** Decimates to at most [targetTriangles] (meshoptimizer); [maxError] is relative to the mesh extent. */
     fun decimate(mesh: Mesh, targetTriangles: Int, maxError: Float = 0.01f): MeshResult
@@ -106,12 +112,22 @@ interface TsdfVolume {
     fun close()
 }
 
-/** Post-processing applied to the final mesh (Settings › Scanning). */
-data class CleanupOptions(
-    val removeTablePlane: Boolean = true,
-    val keepLargestComponent: Boolean = true,
-    val watertight: Boolean = true,
-    val smoothing: Smoothing = Smoothing.LOW,
+/**
+ * Cleanup of the final mesh (native `facet_trimesh_cleanup`, docs/04 §4). Millimetres. Built from
+ * Settings › Scanning and [app.facet.scan.ScanTuning.Cleanup] by `ScanTuning.Cleanup.params`.
+ */
+data class CleanupParams(
+    /** The table is looked for this far above the mesh's lowest point; 0 = there is no table. */
+    val tableSearchMm: Float = 0f,
+    /** Cut this far above the table; the cut edge is extended straight down to it. */
+    val tableClipMm: Float = 0f,
+    /** Upward-facing area a 2 mm height band needs to count as the table. */
+    val tableMinAreaMm2: Float = 0f,
+    val keepLargest: Boolean = false,
+    /** Taubin passes (0 = off). */
+    val smoothingIterations: Int = 0,
+    /** Close every hole with a flat patch (watertight). */
+    val fillHoles: Boolean = false,
 )
 
 enum class Smoothing { OFF, LOW, MEDIUM, HIGH }

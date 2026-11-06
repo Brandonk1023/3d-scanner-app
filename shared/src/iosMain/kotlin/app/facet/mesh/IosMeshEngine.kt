@@ -11,6 +11,8 @@ import app.facet.nativecore.facet_point_cloud_create
 import app.facet.nativecore.facet_point_cloud_destroy
 import app.facet.nativecore.facet_point_cloud_size
 import app.facet.nativecore.facet_poisson_reconstruct
+import app.facet.nativecore.facet_cleanup_options
+import app.facet.nativecore.facet_trimesh_cleanup
 import app.facet.nativecore.facet_trimesh_create
 import app.facet.nativecore.facet_trimesh_decimate
 import app.facet.nativecore.facet_trimesh_destroy
@@ -63,6 +65,19 @@ class IosMeshEngine : MeshEngine {
 
     override fun repair(mesh: Mesh, options: RepairOptions): MeshResult = withNativeMesh(mesh) { h ->
         facet_trimesh_repair(h, options.baseCutZMm, options.plinthHeightMm, options.plinthMarginMm)
+    }
+
+    override fun cleanup(mesh: Mesh, params: CleanupParams): MeshResult = withNativeMesh(mesh) { h ->
+        memScoped {
+            val o = alloc<facet_cleanup_options>()
+            o.table_search_mm = params.tableSearchMm
+            o.table_clip_mm = params.tableClipMm
+            o.table_min_area_mm2 = params.tableMinAreaMm2
+            o.keep_largest = if (params.keepLargest) 1 else 0
+            o.smoothing_iterations = params.smoothingIterations
+            o.fill_holes = if (params.fillHoles) 1 else 0
+            facet_trimesh_cleanup(h, o.ptr)
+        }
     }
 
     override fun decimate(mesh: Mesh, targetTriangles: Int, maxError: Float): MeshResult = withNativeMesh(mesh) { h ->

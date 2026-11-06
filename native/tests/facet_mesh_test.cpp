@@ -13,6 +13,7 @@
 using namespace testutil;
 
 void runPipelineTests();  // facet_pipeline_test.cpp
+void runCleanupTests();   // facet_cleanup_test.cpp
 
 namespace {
 
@@ -176,6 +177,7 @@ int main() {
     testSilhouetteCarving();
     testInvalidVolume();
     runPipelineTests();
+    runCleanupTests();
 
     if (failures == 0) std::printf("facet_core tests: all passed\n");
     return failures == 0 ? 0 : 1;

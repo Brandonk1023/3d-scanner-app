@@ -235,24 +235,30 @@ class CaptureEngine internal constructor(
         renderer.draw(view, projection, worldFromBox(anchor), if (dimmed) TRACKING_LOST_ALPHA else 1f)
     }
 
+    /** The raw Quick result before cleanup (box frame, mm). [hasTable]: the depth-only mesh still includes the table. */
+    class RawResult(val mesh: Mesh, val hasTable: Boolean)
+
     /**
-     * The Quick result (box frame, mm): the silhouette-carved hull when enough photos were
-     * segmented, else the depth-only mesh.
+     * The Quick result before cleanup: the silhouette-carved hull when enough photos were
+     * segmented, else the depth-only mesh (which still has the table in it).
      */
-    suspend fun extractFinal(): Mesh = onWorker {
+    suspend fun extractFinal(): RawResult = onWorker {
         val r = tuning.reconstruction
         val views = volume.carvedViews
         Log.i(TAG, "final: carved views=$views (need ${r.carveMinViews})")
         if (views >= r.carveMinViews) {
-            volume.extractHull(r.carveMaxOutsideFraction, r.carveMinSeen)
+            RawResult(volume.extractHull(r.carveMaxOutsideFraction, r.carveMinSeen), hasTable = false)
         } else {
-            clipTable(volume.extract(1, r.meshMinWeight))
+            RawResult(volume.extract(1, r.meshMinWeight), hasTable = true)
         }
     }
 
-    /** Drops triangles lying entirely within [ScanTuning.Reconstruction.tableClipMm] of the table. */
+    /**
+     * Live preview only: drops triangles lying entirely within [ScanTuning.Cleanup.tableClipMm] of
+     * the box base. The final mesh gets the full cleanup instead (ScanPipeline.finalMesh).
+     */
     private fun clipTable(mesh: Mesh): Mesh {
-        val limit = tuning.reconstruction.tableClipMm
+        val limit = tuning.cleanup.tableClipMm
         val p = mesh.positions
         val kept = ArrayList<Int>(mesh.indices.size)
         val idx = mesh.indices
@@ -263,18 +269,7 @@ class CaptureEngine internal constructor(
             if (p[a * 3 + 2] < limit && p[b * 3 + 2] < limit && p[c * 3 + 2] < limit) continue
             kept += a; kept += b; kept += c
         }
-        // Keep only the vertices still in use, so sizes and centring ignore the clipped table.
-        val remap = IntArray(mesh.vertexCount) { -1 }
-        val positions = ArrayList<Float>(kept.size)
-        val indices = IntArray(kept.size) { i ->
-            val old = kept[i]
-            if (remap[old] < 0) {
-                remap[old] = positions.size / 3
-                positions += p[old * 3]; positions += p[old * 3 + 1]; positions += p[old * 3 + 2]
-            }
-            remap[old]
-        }
-        return Mesh(positions.toFloatArray(), indices)
+        return Mesh(p, kept.toIntArray())
     }
 
     /** Persists the volume (scan interrupted). */

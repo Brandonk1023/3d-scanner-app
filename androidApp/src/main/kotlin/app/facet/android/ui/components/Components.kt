@@ -59,6 +59,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.text.BasicText
@@ -285,7 +287,14 @@ fun NavRow(label: String, value: String?, onClick: () -> Unit, valueMono: Boolea
                 value,
                 style = if (valueMono) Facet.type.dataMono else MaterialTheme.typography.bodyMedium,
                 color = Facet.colors.textMuted,
-                modifier = Modifier.padding(start = Space.s),
+                textAlign = TextAlign.End,
+                // At most half the row, so a long value (or a large font scale) can't squeeze the label.
+                modifier = Modifier
+                    .padding(start = Space.s)
+                    .layout { measurable, constraints ->
+                        val p = measurable.measure(constraints.copy(maxWidth = constraints.maxWidth / 2))
+                        layout(p.width, p.height) { p.place(0, 0) }
+                    },
             )
         }
         Icon(

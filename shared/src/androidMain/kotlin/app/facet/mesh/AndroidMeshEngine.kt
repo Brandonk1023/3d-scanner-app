@@ -23,6 +23,13 @@ class AndroidMeshEngine : MeshEngine {
         FacetCoreJni.meshRepair(h, options.baseCutZMm, options.plinthHeightMm, options.plinthMarginMm)
     }
 
+    override fun cleanup(mesh: Mesh, params: CleanupParams): MeshResult = withNativeMesh(mesh) { h ->
+        FacetCoreJni.meshCleanup(
+            h, params.tableSearchMm, params.tableClipMm, params.tableMinAreaMm2,
+            params.keepLargest, params.smoothingIterations, params.fillHoles,
+        )
+    }
+
     override fun decimate(mesh: Mesh, targetTriangles: Int, maxError: Float): MeshResult = withNativeMesh(mesh) { h ->
         FacetCoreJni.meshDecimate(h, targetTriangles, maxError)
     }

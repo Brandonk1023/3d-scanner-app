@@ -93,12 +93,13 @@ import app.facet.data.ResultQuality
 import app.facet.data.Scan
 import app.facet.export.ExportFormat
 import app.facet.mesh.bounds
-import app.facet.mesh.restingCentred
+import app.facet.mesh.ScanPipeline
 import app.facet.platform.AndroidHapticsPlayer
 import app.facet.scan.CoverageBand
 import app.facet.scan.CoverageState
 import app.facet.scan.GuidanceMessage
 import app.facet.scan.ResultMode
+import app.facet.scan.ScanTuning
 import app.facet.scan.TrackingState
 import app.facet.ui.scan.CaptureFrame
 import app.facet.ui.scan.CapturePhase
@@ -106,8 +107,11 @@ import app.facet.ui.scan.CaptureSheet
 import app.facet.ui.scan.CaptureUiState
 import app.facet.ui.scan.CaptureViewModel
 import app.facet.ui.scan.ScanSetup
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filterIsInstance
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -199,14 +203,18 @@ internal fun CaptureLayer(
         building = true
         engine.fusing = false
         if (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE != 0) engine.saveVolume()
-        val mesh = engine.extractFinal().restingCentred()
-        if (mesh.triangleCount == 0) {
+        val raw = engine.extractFinal()
+        if (raw.mesh.triangleCount == 0) {
             building = false
             notice = R.string.capture_empty
             vm.keepScanning()
             return@LaunchedEffect
         }
-        // TODO(Phase 4): cleanup (table, largest component, watertight, smoothing) on the final mesh.
+        val settings = container.settings.settings.first()
+        val cleanup = ScanTuning.Default.cleanup.params(settings.watertight, settings.smoothing, raw.hasTable)
+        val mesh = withContext(Dispatchers.Default) {
+            ScanPipeline(container.meshEngine).finalMesh(raw.mesh, cleanup).mesh
+        }
         val id = engine.scanDir.name
         container.scans.add(
             Scan(

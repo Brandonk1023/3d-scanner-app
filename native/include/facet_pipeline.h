@@ -1,6 +1,8 @@
 /*
  * Facet mesh pipeline — plain C API (second header next to facet_mesh.h).
  *
+ * Quick:      facet_volume_extract / _extract_hull → facet_trimesh_cleanup → facet_trimesh_repair →
+ *             facet_trimesh_decimate (ScanPipeline.finalMesh on the Kotlin side).
  * Live mode:  facet_volume_* (TSDF fusion) → facet_volume_extract_marching_cubes → facet_trimesh_repair
  *             (Manifold) → facet_trimesh_decimate (meshoptimizer) → facet_trimesh_write_stl / _3mf.
  * Photo mode: facet_point_cloud_add_depth (posed depth stills) → facet_poisson_reconstruct
@@ -43,6 +45,40 @@ const int32_t *facet_trimesh_indices(const facet_trimesh *mesh, int32_t *index_c
 
 /** Full-resolution marching cubes (ported from Open3D) of a fused volume. NULL if empty. */
 facet_trimesh *facet_volume_extract_marching_cubes(const facet_volume *volume, float min_weight);
+
+/* ---- Cleanup (Facet's own code) ------------------------------------------------------------ */
+
+/** Settings for facet_trimesh_cleanup (docs/04 §4 "Cleanup"). Lengths in mm, areas in mm². */
+typedef struct facet_cleanup_options {
+    /** The table is looked for in the bottom table_search_mm of the mesh; 0 = don't remove it. */
+    float table_search_mm;
+    /** Cut this far above the table (depth noise merges object and table there). */
+    float table_clip_mm;
+    /** Upward-facing area a 2 mm height band needs to count as the table. */
+    float table_min_area_mm2;
+    /** Nonzero: keep only the connected piece with the largest surface area. */
+    int32_t keep_largest;
+    /** Taubin smoothing passes (0 = off). Open edges stay where they are. */
+    int32_t smoothing_iterations;
+    /** Nonzero: close every open loop with a flat patch (watertight). */
+    int32_t fill_holes;
+} facet_cleanup_options;
+
+/**
+ * Cleans a final scan mesh in place, in this order:
+ *   1. welds coincident vertices and drops degenerate triangles;
+ *   2. table: finds the dominant upward-facing plane near the bottom, cuts the mesh table_clip_mm
+ *      above it and extends the cut edge straight down to the table (the object keeps its height);
+ *      skipped when no table is found (e.g. a carved hull, which has no table);
+ *   3. keeps the largest connected piece;
+ *   4. Taubin smoothing (no shrinkage, open edges fixed);
+ *   5. fills holes: flat ear-clipped patches, so the cut base becomes a flat bottom.
+ * Returns FACET_OK, FACET_ERR_EMPTY (nothing left) or FACET_ERR_INVALID.
+ */
+int32_t facet_trimesh_cleanup(facet_trimesh *mesh, const facet_cleanup_options *options);
+
+/** Open (boundary) edges of a mesh: 0 means closed. For tests and diagnostics. */
+int32_t facet_trimesh_open_edges(const facet_trimesh *mesh);
 
 /* ---- Repair (Manifold) -------------------------------------------------------------------- */
 

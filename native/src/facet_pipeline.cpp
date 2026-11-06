@@ -57,6 +57,31 @@ facet_trimesh *facet_volume_extract_marching_cubes(const facet_volume *volume, f
     return m;
 }
 
+int32_t facet_trimesh_cleanup(facet_trimesh *mesh, const facet_cleanup_options *options) {
+    if (!mesh || !options) return FACET_ERR_INVALID;
+    facet::pipeline::CleanupOptions o;
+    o.tableSearch = options->table_search_mm;
+    o.tableClip = options->table_clip_mm;
+    o.tableMinArea = options->table_min_area_mm2;
+    o.keepLargest = options->keep_largest != 0;
+    o.smoothingIterations = options->smoothing_iterations;
+    o.fillHoles = options->fill_holes != 0;
+    try {
+        return facet::pipeline::cleanup(mesh->mesh, o);
+    } catch (...) {
+        return FACET_ERR_INTERNAL;
+    }
+}
+
+int32_t facet_trimesh_open_edges(const facet_trimesh *mesh) {
+    if (!mesh) return 0;
+    try {
+        return static_cast<int32_t>(facet::pipeline::openEdgeCount(mesh->mesh));
+    } catch (...) {
+        return 0;
+    }
+}
+
 int32_t facet_trimesh_repair(facet_trimesh *mesh, float base_cut_z, float plinth_height, float plinth_margin) {
     if (!mesh) return FACET_ERR_INVALID;
     return facet::pipeline::repairWithManifold(mesh->mesh, base_cut_z, plinth_height, plinth_margin);

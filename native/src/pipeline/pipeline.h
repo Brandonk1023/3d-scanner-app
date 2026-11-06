@@ -28,6 +28,16 @@ struct PointCloud {
 // Status codes mirror FACET_* in facet_pipeline.h.
 enum Status : int32_t { kOk = 0, kInvalid = 1, kEmpty = 2, kNotManifold = 3, kIo = 4, kUnsupported = 5, kInternal = 6 };
 
+// cleanup.cpp
+struct CleanupOptions {
+    float tableSearch = 0, tableClip = 0, tableMinArea = 0;
+    bool keepLargest = false;
+    int smoothingIterations = 0;
+    bool fillHoles = false;
+};
+Status cleanup(TriMesh &mesh, const CleanupOptions &options);
+size_t openEdgeCount(const TriMesh &mesh);
+
 // repair_manifold.cpp
 Status repairWithManifold(TriMesh &mesh, float baseCutZ, float plinthHeight, float plinthMargin);
 

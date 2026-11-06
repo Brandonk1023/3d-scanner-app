@@ -1,6 +1,8 @@
 package app.facet.scan
 
 import app.facet.geometry.BoxSize
+import app.facet.mesh.CleanupParams
+import app.facet.mesh.Smoothing
 
 /**
  * Every value marked _placeholder_ in design/docs/04-scan-experience.md and 06-open-questions.md,
@@ -14,6 +16,7 @@ data class ScanTuning(
     val guidance: Guidance = Guidance(),
     val finish: Finish = Finish(),
     val reconstruction: Reconstruction = Reconstruction(),
+    val cleanup: Cleanup = Cleanup(),
     val keyframes: Keyframes = Keyframes(),
     val storage: Storage = Storage(),
     val scale: Scale = Scale(),
@@ -116,8 +119,6 @@ data class ScanTuning(
         val fuseMinConfidence: Float = 0.6f,
         /** Surface needs this much accumulated confidence weight to appear in a mesh. */
         val meshMinWeight: Float = 6f,
-        /** Mesh triangles lying entirely within this of the table are the table itself (until Phase 4 cleanup). */
-        val tableClipMm: Float = 6f,
         /** Live preview samples every Nth voxel. */
         val livePreviewStep: Int = 2,
         // Silhouette carving (Quick result). Tuned on an S24 Ultra mug scan, 236 photos.
@@ -160,6 +161,37 @@ data class ScanTuning(
         val quickEstimateSec: Int = 5,
         val highDetailEstimateMin: Int = 4,
     )
+
+    /** Final-mesh cleanup (docs/04 §4), see [CleanupParams]. */
+    data class Cleanup(
+        /** Phone depth noise (~8 mm) blurs the table; objects lower than this can't be told apart from it. */
+        val tableSearchMm: Float = 12f,
+        /** Object and table merge in the depth this close to the table; the base is rebuilt straight down. */
+        val tableClipMm: Float = 6f,
+        /** 20 × 20 mm of flat, upward-facing surface. */
+        val tableMinAreaMm2: Float = 400f,
+        /** Taubin passes per Settings › Smoothing level. */
+        val smoothingLow: Int = 2,
+        val smoothingMedium: Int = 5,
+        val smoothingHigh: Int = 10,
+    ) {
+        fun smoothingIterations(level: Smoothing): Int = when (level) {
+            Smoothing.OFF -> 0
+            Smoothing.LOW -> smoothingLow
+            Smoothing.MEDIUM -> smoothingMedium
+            Smoothing.HIGH -> smoothingHigh
+        }
+
+        /** [hasTable] is false for a carved hull: carving already removed the table. */
+        fun params(watertight: Boolean, smoothing: Smoothing, hasTable: Boolean) = CleanupParams(
+            tableSearchMm = if (hasTable) tableSearchMm else 0f,
+            tableClipMm = tableClipMm,
+            tableMinAreaMm2 = tableMinAreaMm2,
+            keepLargest = true,
+            smoothingIterations = smoothingIterations(smoothing),
+            fillHoles = watertight,
+        )
+    }
 
     data class Keyframes(
         val minRotationDeg: Double = 10.0,

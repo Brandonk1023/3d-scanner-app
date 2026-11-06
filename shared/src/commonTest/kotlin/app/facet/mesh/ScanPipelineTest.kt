@@ -2,6 +2,7 @@ package app.facet.mesh
 
 import app.facet.export.ExportFormat
 import app.facet.geometry.BoxSize
+import app.facet.scan.ScanTuning
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -15,7 +16,12 @@ class ScanPipelineTest {
     private val repairedMesh = Mesh(floatArrayOf(0f, 0f, 0f, 2f, 0f, 0f, 0f, 2f, 0f), intArrayOf(0, 1, 2))
     private val decimatedMesh = Mesh(floatArrayOf(0f, 0f, 0f, 3f, 0f, 0f, 0f, 3f, 0f), intArrayOf(0, 1, 2))
 
-    private class FakeEngine(val repairStatus: PipelineStatus, val repaired: Mesh, val decimated: Mesh) : MeshEngine {
+    private class FakeEngine(
+        val repairStatus: PipelineStatus,
+        val repaired: Mesh,
+        val decimated: Mesh,
+        val cleaned: Mesh = Mesh(floatArrayOf(5f, 5f, 2f, 6f, 5f, 2f, 5f, 6f, 3f), intArrayOf(0, 1, 2)),
+    ) : MeshEngine {
         val calls = mutableListOf<String>()
         var decimateInput: Mesh? = null
         override fun coreVersion() = "fake"
@@ -25,6 +31,13 @@ class ScanPipelineTest {
         override fun repair(mesh: Mesh, options: RepairOptions): MeshResult {
             calls += "repair"
             return if (repairStatus == PipelineStatus.OK) MeshResult(repairStatus, repaired) else MeshResult(repairStatus, mesh)
+        }
+        var cleanupStatus = PipelineStatus.OK
+        var cleanupParams: CleanupParams? = null
+        override fun cleanup(mesh: Mesh, params: CleanupParams): MeshResult {
+            calls += "cleanup"
+            cleanupParams = params
+            return if (cleanupStatus == PipelineStatus.OK) MeshResult(cleanupStatus, cleaned) else MeshResult(cleanupStatus, mesh)
         }
         override fun decimate(mesh: Mesh, targetTriangles: Int, maxError: Float): MeshResult {
             calls += "decimate:$targetTriangles"
@@ -88,6 +101,50 @@ class ScanPipelineTest {
         val out = ScanPipeline(engine).photo(FakeCloud(MeshResult(PipelineStatus.OK, triangle)))!!
         assertEquals(listOf("repair", "decimate:200000"), engine.calls)
         assertSame(decimatedMesh, out.mesh)
+    }
+
+    @Test
+    fun finalMeshCleansThenRepairsThenDecimatesAndRestsOnTheTable() {
+        // Decimation hands back an off-centre, raised triangle; the result is moved onto Z = 0.
+        val raised = Mesh(floatArrayOf(10f, 10f, 4f, 14f, 10f, 4f, 10f, 14f, 9f), intArrayOf(0, 1, 2))
+        val engine = FakeEngine(PipelineStatus.OK, repairedMesh, raised)
+        val params = CleanupParams(tableSearchMm = 12f, fillHoles = true)
+        val out = ScanPipeline(engine).finalMesh(triangle, params, ScanPipeline.Options(targetTriangles = 500))
+        assertEquals(listOf("cleanup", "repair", "decimate:500"), engine.calls)
+        assertEquals(params, engine.cleanupParams)
+        assertTrue(out.repaired)
+        val b = out.mesh.bounds()
+        assertEquals(0.0, b.min.z, 1e-6)
+        assertEquals(0.0, b.center.x, 1e-6)
+        assertEquals(0.0, b.center.y, 1e-6)
+    }
+
+    @Test
+    fun finalMeshUsesTheRawMeshWhenCleanupFails() {
+        val engine = FakeEngine(PipelineStatus.OK, repairedMesh, decimatedMesh).apply { cleanupStatus = PipelineStatus.EMPTY }
+        var repairInput: Mesh? = null
+        val spy = object : MeshEngine by engine {
+            override fun repair(mesh: Mesh, options: RepairOptions): MeshResult {
+                repairInput = mesh
+                return engine.repair(mesh, options)
+            }
+        }
+        ScanPipeline(spy).finalMesh(triangle, CleanupParams())
+        assertSame(triangle, repairInput)
+    }
+
+    @Test
+    fun cleanupParamsFollowSettingsAndTuning() {
+        val t = ScanTuning().cleanup
+        val depthOnly = t.params(watertight = true, smoothing = Smoothing.MEDIUM, hasTable = true)
+        assertEquals(t.tableSearchMm, depthOnly.tableSearchMm)
+        assertEquals(t.smoothingMedium, depthOnly.smoothingIterations)
+        assertTrue(depthOnly.fillHoles && depthOnly.keepLargest)
+        val hull = t.params(watertight = false, smoothing = Smoothing.OFF, hasTable = false)
+        assertEquals(0f, hull.tableSearchMm)
+        assertEquals(0, hull.smoothingIterations)
+        assertFalse(hull.fillHoles)
+        assertTrue(t.smoothingLow < t.smoothingMedium && t.smoothingMedium < t.smoothingHigh)
     }
 
     @Test

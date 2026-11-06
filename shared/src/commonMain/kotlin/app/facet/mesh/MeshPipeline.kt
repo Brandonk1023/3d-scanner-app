@@ -61,6 +61,7 @@ interface PointCloud {
  * The two reconstruction paths, wired stage by stage (docs/04). Interfaces only for now: the
  * parameters in [Options] are placeholders until Phase 4 tuning.
  *
+ * - Quick: extracted mesh → cleanup → Manifold repair → meshoptimizer ([finalMesh])
  * - Live:  TSDF fusion → marching cubes → Manifold repair → meshoptimizer → export
  * - Photo: posed depth stills → oriented points → Screened Poisson + trim → Manifold → meshoptimizer → export
  */
@@ -95,6 +96,18 @@ class ScanPipeline(private val engine: MeshEngine) {
         val surface = cloud.reconstructPoisson(options.poissonDepth, options.poissonTrimFraction)
         val mesh = surface.mesh?.takeIf { surface.ok && it.triangleCount > 0 } ?: return null
         return finish(mesh, options)
+    }
+
+    /**
+     * The final Quick result from the raw extracted mesh: cleanup → repair → decimate, then resting
+     * on Z = 0 and centred (docs/04 §4). When cleanup fails (e.g. it would leave nothing) the raw
+     * mesh goes on unchanged.
+     */
+    fun finalMesh(raw: Mesh, cleanup: CleanupParams, options: Options = Options()): Output {
+        val cleaned = engine.cleanup(raw, cleanup)
+        val mesh = cleaned.mesh?.takeIf { cleaned.ok && it.triangleCount > 0 } ?: raw
+        val out = finish(mesh, options)
+        return Output(out.mesh.restingCentred(), out.repaired, out.repairStatus)
     }
 
     fun export(mesh: Mesh, format: ExportFormat, path: String, name: String): PipelineStatus =

@@ -46,6 +46,10 @@ object FacetCoreJni {
     external fun meshIndices(mesh: Long): IntArray
     external fun volumeExtractMarchingCubes(volume: Long, minWeight: Float): Long
     external fun meshRepair(mesh: Long, baseCutZ: Float, plinthHeight: Float, plinthMargin: Float): Int
+    external fun meshCleanup(
+        mesh: Long, tableSearch: Float, tableClip: Float, tableMinArea: Float,
+        keepLargest: Boolean, smoothingIterations: Int, fillHoles: Boolean,
+    ): Int
     external fun meshDecimate(mesh: Long, targetTriangles: Int, maxError: Float): Int
     external fun meshWriteStl(mesh: Long, path: String): Int
     external fun meshWrite3mf(mesh: Long, path: String, name: String): Int

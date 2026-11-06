@@ -7,10 +7,12 @@ v1 exports STL and 3MF.
 - Design handoff and specs: [`design/`](design/) (start with `design/docs/01-product-spec.md`)
 - Project structure: [`design/docs/07-multiplatform.md`](design/docs/07-multiplatform.md)
 
-**Status:** Phase 5 (export and gallery persistence) is done: scans are stored in Room with their
-meshes on disk, and Export writes real STL / 3MF files to Downloads/Facet or the share sheet. Phase 3
-(capture) still needs an on-device check of silhouette carving, and Phase 4 (cleanup of the final
-mesh) is next. Debug builds have Settings › Developer › Add sample scans for testing on the emulator.
+**Status:** Phase 4 (Quick result) and Phase 5 (export and gallery persistence) are done. On Finish,
+the final mesh is cleaned up in the C++ core (table removed and the base rebuilt flat, largest piece
+kept, Taubin smoothing from Settings, holes filled for a watertight mesh), then repaired, decimated
+and saved. Phase 3 capture and the cleanup values in `ScanTuning.Cleanup` still need on-device
+tuning. Debug builds have Settings › Developer › Add sample scans and Simulate a scan (synthetic
+depth through the real fusion and cleanup) for testing on the emulator.
 
 ## Layout
 
@@ -20,11 +22,11 @@ mesh) is next. Debug builds have Settings › Developer › Add sample scans for
 | `shared/src/commonMain/.../data/` | Gallery: Room database (`db/`), `RoomScanRepository` (records in Room, each scan's meshes and keyframes in `files/scans/<id>/`), `MeshFiles` (the on-disk mesh format) |
 | `shared/schemas/` | Room's exported schema per database version (committed, for future migrations) |
 | `native/` | C++ reconstruction core with a plain C API (`include/facet_mesh.h`, `include/facet_pipeline.h`), no Android or Apple dependencies |
-| `native/src/` | TSDF fusion and silhouette carving (`tsdf.*`), C API, and `pipeline/` — one file per third-party library (Manifold, meshoptimizer, lib3mf, PoissonRecon) plus our STL writer and depth → point-cloud code |
+| `native/src/` | TSDF fusion and silhouette carving (`tsdf.*`), C API, and `pipeline/` — one file per third-party library (Manifold, meshoptimizer, lib3mf, PoissonRecon) plus our own final-mesh cleanup (`cleanup.cpp`), STL writer and depth → point-cloud code |
 | `native/fusion/` | Marching cubes ported from Open3D (keeps Open3D's MIT notice and a "Modified" note) |
 | `native/cmake/` | `FacetFetch.cmake` (pinned dependency checkout) and `Lib3mfLibzip.cmake` (cross-compiles lib3mf's bundled libzip headers) |
 | `native/compat/` | Empty `<sys/timeb.h>` for Android, needed by PoissonRecon's headers |
-| `native/tests/` | Host C++ tests (fusion, carving, every pipeline stage on a synthetic sphere) |
+| `native/tests/` | Host C++ tests (fusion, carving, every pipeline stage on a synthetic sphere, cleanup of a cylinder fused on a table) |
 | `native/scripts/scan_notices.py`, `native/third_party_notices.txt` | Notice scanner and its reviewed baseline (see [Licenses](#licenses-and-credits)) |
 | `native/android/` | Gradle module `:nativeAndroid`: NDK/CMake build of the core + JNI bridge |
 | `androidApp/` | Jetpack Compose app, ARCore, theme from `design/android/theme`; license texts in `src/main/assets/licenses/` |
@@ -82,7 +84,7 @@ is modified; Open3D's code is ported rather than fetched.
 | [meshoptimizer](https://github.com/zeux/meshoptimizer) — Arseny Kapoulkine | v1.3 (`9e1f07b`) | MIT | Decimation before export |
 
 lib3mf's bundled LibreSSL and googletest are not compiled in. STL export, TSDF fusion, silhouette
-carving and the depth → point-cloud conversion are Facet's own code; the point-cloud approach follows
+carving, mesh cleanup and the depth → point-cloud conversion are Facet's own code; the point-cloud approach follows
 Google's [ARCore Raw Depth codelab](https://github.com/google-ar/codelab-raw-depth-api) (Apache-2.0),
 but no code was copied from it.
 

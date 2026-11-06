@@ -79,6 +79,7 @@ add_library(facet_core STATIC
     src/facet_pipeline.cpp
     src/tsdf.cpp
     fusion/marching_cubes.cpp
+    src/pipeline/cleanup.cpp
     src/pipeline/repair_manifold.cpp
     src/pipeline/decimate_meshopt.cpp
     src/pipeline/export_stl.cpp
@@ -114,7 +115,7 @@ endif()
 option(FACET_BUILD_TESTS "Build C++ unit tests" ${PROJECT_IS_TOP_LEVEL})
 if(FACET_BUILD_TESTS AND NOT CMAKE_SYSTEM_NAME STREQUAL "iOS" AND NOT ANDROID)
     enable_testing()
-    add_executable(facet_core_tests tests/facet_mesh_test.cpp tests/facet_pipeline_test.cpp)
+    add_executable(facet_core_tests tests/facet_mesh_test.cpp tests/facet_pipeline_test.cpp tests/facet_cleanup_test.cpp)
     target_link_libraries(facet_core_tests PRIVATE facet_core)
     add_test(NAME facet_core_tests COMMAND facet_core_tests)
 endif()

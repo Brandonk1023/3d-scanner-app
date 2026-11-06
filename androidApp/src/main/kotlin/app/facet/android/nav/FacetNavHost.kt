@@ -119,7 +119,11 @@ fun FacetNavHost(
         }
 
         composable<Settings> {
-            SettingsScreen(onBack = { nav.popBackStack() }, onNativeLibraries = { nav.navigate(NativeLibraries) })
+            SettingsScreen(
+                onBack = { nav.popBackStack() },
+                onNativeLibraries = { nav.navigate(NativeLibraries) },
+                onOpenScan = { id -> nav.navigate(Viewer(id)) },
+            )
         }
 
         composable<NativeLibraries> {

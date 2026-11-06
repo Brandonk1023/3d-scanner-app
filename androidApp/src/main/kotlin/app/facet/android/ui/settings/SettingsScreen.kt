@@ -66,6 +66,7 @@ import app.facet.android.ui.theme.Space
 import android.content.pm.ApplicationInfo
 import androidx.compose.runtime.rememberCoroutineScope
 import app.facet.data.addSampleScans
+import app.facet.data.addSimulatedScan
 import app.facet.format.formatBytes
 import kotlinx.coroutines.launch
 import app.facet.mesh.Smoothing
@@ -79,7 +80,7 @@ private enum class SettingsDialog { APPEARANCE, UNITS, DEFAULT_RESULT, CLEAR_PHO
 
 /** Settings.png */
 @Composable
-fun SettingsScreen(onBack: () -> Unit, onNativeLibraries: () -> Unit) {
+fun SettingsScreen(onBack: () -> Unit, onNativeLibraries: () -> Unit, onOpenScan: (String) -> Unit = {}) {
     val container = appContainer()
     val vm: SettingsViewModel = viewModel { SettingsViewModel(container.settings, container.scans, container.storage) }
     val state by vm.state.collectAsStateWithLifecycle()
@@ -230,6 +231,22 @@ fun SettingsScreen(onBack: () -> Unit, onNativeLibraries: () -> Unit) {
                             stringResource(R.string.dev_add_samples),
                             stringResource(R.string.dev_add_samples_sub),
                             { scope.launch { container.scans.addSampleScans() } },
+                        )
+                        ListDivider()
+                        var simulating by remember { mutableStateOf(false) }
+                        NavRow(
+                            stringResource(if (simulating) R.string.dev_simulate_scan_running else R.string.dev_simulate_scan),
+                            stringResource(R.string.dev_simulate_scan_sub),
+                            {
+                                if (!simulating) {
+                                    simulating = true
+                                    scope.launch {
+                                        val id = container.scans.addSimulatedScan(container.meshEngine, s)
+                                        simulating = false
+                                        if (id != null) onOpenScan(id)
+                                    }
+                                }
+                            },
                         )
                     }
                 }

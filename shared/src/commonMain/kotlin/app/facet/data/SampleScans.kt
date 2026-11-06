@@ -2,9 +2,16 @@ package app.facet.data
 
 import app.facet.export.ExportFormat
 import app.facet.mesh.Mesh
+import app.facet.mesh.MeshEngine
+import app.facet.mesh.ScanPipeline
 import app.facet.mesh.SampleMeshes
 import app.facet.mesh.SampleShape
 import app.facet.mesh.bounds
+import app.facet.scan.ScanTuning
+import app.facet.scan.SimulatedScan
+import app.facet.settings.AppSettings
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
@@ -55,3 +62,32 @@ suspend fun ScanRepository.addSampleScans(clock: Clock = Clock.System) {
 }
 
 private const val MB = 1_000_000L
+
+/**
+ * Debug builds: runs [SimulatedScan] through the real native fusion and the Quick result pipeline
+ * (cleanup with the current Settings › Scanning values, repair, decimation) and saves it like a
+ * real scan. Returns the new scan's id, or null if fusion produced nothing.
+ */
+suspend fun ScanRepository.addSimulatedScan(
+    engine: MeshEngine,
+    settings: AppSettings,
+    tuning: ScanTuning = ScanTuning.Default,
+    clock: Clock = Clock.System,
+): String? {
+    val mesh = withContext(Dispatchers.Default) {
+        val raw = SimulatedScan.run(engine, tuning) ?: return@withContext null
+        val cleanup = tuning.cleanup.params(settings.watertight, settings.smoothing, hasTable = true)
+        ScanPipeline(engine).finalMesh(raw, cleanup).mesh
+    } ?: return null
+    val now = clock.now()
+    val id = "sim-${now.toEpochMilliseconds()}"
+    add(
+        Scan(
+            id = id, name = nextScanName(), createdAt = now, quality = ResultQuality.QUICK,
+            size = mesh.bounds().size, triangleCount = mesh.triangleCount, hasSavedPhotos = false,
+            modelBytes = ExportFormat.STL.estimatedBytes(mesh),
+        ),
+        mesh,
+    )
+    return id
+}

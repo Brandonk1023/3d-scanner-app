@@ -167,6 +167,21 @@ Java_app_facet_nativecore_FacetCoreJni_meshRepair(JNIEnv * /* env */, jobject /*
 }
 
 JNIEXPORT jint JNICALL
+Java_app_facet_nativecore_FacetCoreJni_meshCleanup(JNIEnv * /* env */, jobject /* this */, jlong mesh,
+                                                   jfloat tableSearch, jfloat tableClip, jfloat tableMinArea,
+                                                   jboolean keepLargest, jint smoothingIterations,
+                                                   jboolean fillHoles) {
+    facet_cleanup_options o{};
+    o.table_search_mm = tableSearch;
+    o.table_clip_mm = tableClip;
+    o.table_min_area_mm2 = tableMinArea;
+    o.keep_largest = keepLargest ? 1 : 0;
+    o.smoothing_iterations = smoothingIterations;
+    o.fill_holes = fillHoles ? 1 : 0;
+    return facet_trimesh_cleanup(reinterpret_cast<facet_trimesh *>(mesh), &o);
+}
+
+JNIEXPORT jint JNICALL
 Java_app_facet_nativecore_FacetCoreJni_meshDecimate(JNIEnv * /* env */, jobject /* this */, jlong mesh,
                                                     jint targetTriangles, jfloat maxError) {
     return facet_trimesh_decimate(reinterpret_cast<facet_trimesh *>(mesh), targetTriangles, maxError);
