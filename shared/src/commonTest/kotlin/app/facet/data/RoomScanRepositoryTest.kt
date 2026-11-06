@@ -6,6 +6,7 @@ import app.facet.geometry.BoxSize
 import app.facet.mesh.Mesh
 import app.facet.mesh.SampleMeshes
 import app.facet.mesh.SampleShape
+import app.facet.mesh.bounds
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -84,6 +85,24 @@ class RoomScanRepositoryTest {
         assertEquals(1, thumbnailCalls)
         assertEquals(1, repo.loadThumbnail("big")!!.triangleCount)
         assertEquals(RoomScanRepository.THUMBNAIL_TRIANGLES + 1, repo.loadMesh("big")!!.triangleCount)
+    }
+
+    @Test
+    fun applyScaleRewritesTheMeshAndRecordsTheReference() = runTest {
+        val cube = SampleMeshes.create(SampleShape.CUBE) // 20 mm
+        repo.add(scan("scan-1").copy(size = cube.bounds().size), cube)
+        repo.applyScale("scan-1", 1.5, "30.0 mm")
+
+        val saved = assertNotNull(repo.scan("scan-1").first())
+        assertEquals("30.0 mm", saved.scaleReference)
+        assertEquals(30.0, saved.size.widthMm, 1e-4)
+        val b = assertNotNull(repo.loadMesh("scan-1")).bounds()
+        assertEquals(30.0, b.size.heightMm, 1e-4)
+        assertEquals(0.0, b.min.z, 1e-6) // still resting on the table
+        assertEquals(30.0, assertNotNull(repo.loadThumbnail("scan-1")).bounds().size.heightMm, 1e-4)
+
+        repo.applyScale("missing", 2.0, "x") // no-op
+        assertNull(repo.scan("missing").first())
     }
 
     @Test

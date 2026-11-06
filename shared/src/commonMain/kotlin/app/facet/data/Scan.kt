@@ -52,6 +52,11 @@ interface ScanRepository {
     /** "Scan_07": the next free default name. */
     suspend fun nextScanName(): String
     suspend fun rename(id: String, name: String)
+    /**
+     * Scales the scan's mesh uniformly by [factor] and marks it verified against [reference]
+     * ("1 € coin", "98.0 mm"). Does nothing if the scan or its mesh is missing.
+     */
+    suspend fun applyScale(id: String, factor: Double, reference: String)
     suspend fun delete(id: String)
     /** Deletes every scan's keyframes; those scans can no longer be reprocessed. */
     suspend fun clearSavedPhotos()

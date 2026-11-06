@@ -206,8 +206,12 @@ data class ScanTuning(
     )
 
     data class Scale(
-        /** Warn when an automatic scale correction exceeds ± this fraction. */
+        /** Warn when a scale correction exceeds ± this fraction. */
         val warnCorrectionAbove: Double = 0.10,
+        /** Corrections beyond ± this fraction are refused (a typo or the wrong edge, not a scan error). */
+        val maxCorrection: Double = 0.5,
+        /** Manual measurements shorter than this are too imprecise to scale from. */
+        val minMeasuredMm: Double = 5.0,
     )
 
     /** Allowed camera-to-box-centre distance for a box of this size. */

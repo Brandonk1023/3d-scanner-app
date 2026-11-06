@@ -321,6 +321,13 @@
     <string name="scale_measured">Measured %1$s</string>
     <string name="reset_points">Reset points</string>
     <string name="scale_none_found">No coin found. Measure a known edge instead.</string>
+    <string name="scale_tap_second">Tap the other end of the edge</string>
+    <string name="scale_drag_points">Drag a point to adjust it</string>
+    <string name="scale_too_short">The points are too close together. Measure a longer edge.</string>
+    <string name="scale_warn_large">That\'s a big change. Check the length and that the points sit on the right edge.</string>
+    <string name="scale_out_of_range">Too far from the scan to be right. Check the length and the points.</string>
+    <string name="scale_input_hint">Length</string>
+    <string name="scale_correction_desc">Correction %1$s</string>
 
     <!-- Export -->
     <string name="export_title">Export</string>

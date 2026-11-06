@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -37,7 +39,12 @@ class ViewerViewModel(
         }.stateIn(viewModelScope, SharingStarted.Eagerly, ViewerUiState())
 
     init {
-        viewModelScope.launch { mesh.value = repository.loadMesh(scanId) }
+        // Reload whenever the stored mesh changes size (Scale check rewrites it).
+        viewModelScope.launch {
+            repository.scan(scanId).map { it?.size }.distinctUntilChanged().collect {
+                mesh.value = repository.loadMesh(scanId)
+            }
+        }
     }
 
     fun rename(name: String) {

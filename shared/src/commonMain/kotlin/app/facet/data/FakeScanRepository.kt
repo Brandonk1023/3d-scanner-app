@@ -3,6 +3,8 @@ package app.facet.data
 import app.facet.mesh.Mesh
 import app.facet.mesh.SampleMeshes
 import app.facet.mesh.SampleShape
+import app.facet.mesh.bounds
+import app.facet.mesh.scaled
 import app.facet.platform.StorageUsage
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,6 +42,16 @@ class FakeScanRepository(clock: Clock = Clock.System) : ScanRepository {
     override suspend fun nextScanName(): String = nextFreeScanName(entries.value.map { it.scan.name }.toSet())
 
     override suspend fun rename(id: String, name: String) = edit(id) { it.copy(name = name) }
+
+    override suspend fun applyScale(id: String, factor: Double, reference: String) {
+        val mesh = loadMesh(id)?.scaled(factor) ?: return
+        entries.update { list ->
+            list.map {
+                if (it.scan.id != id) it
+                else Entry(it.scan.copy(size = mesh.bounds().size, scaleReference = reference), shape = null, mesh = mesh)
+            }
+        }
+    }
 
     override suspend fun delete(id: String) = entries.update { list -> list.filterNot { it.scan.id == id } }
 

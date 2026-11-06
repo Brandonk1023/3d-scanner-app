@@ -8,6 +8,7 @@ import app.facet.export.sanitizeFileName
 import app.facet.format.formatBytes
 import app.facet.format.formatCount
 import app.facet.format.formatFixed
+import app.facet.format.formatSignedPercent
 import app.facet.format.formatLength
 import app.facet.geometry.BoxSize
 import app.facet.mesh.Mesh
@@ -54,6 +55,9 @@ class SharedLogicTest {
         assertEquals("118.6", formatFixed(118.6, 1))
         assertEquals("0.05", formatFixed(0.049999, 2))
         assertEquals("-1.5", formatFixed(-1.5, 1))
+        assertEquals("+1.66%", formatSignedPercent(0.0166))
+        assertEquals("-5.00%", formatSignedPercent(-0.05))
+        assertEquals("+0.00%", formatSignedPercent(-0.000001))
         assertEquals("0.0", formatFixed(-0.01, 1))
         assertEquals("4.67", formatLength(118.6, LengthUnit.INCHES))
         assertEquals("640", formatCount(640))

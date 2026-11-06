@@ -20,9 +20,9 @@ data class AppSettings(
 enum class ThemeMode { SYSTEM, LIGHT, DARK }
 
 /** Display only — everything is stored and exported in millimetres. */
-enum class LengthUnit(val mmPerUnit: Double) {
-    MILLIMETRES(1.0),
-    INCHES(25.4);
+enum class LengthUnit(val mmPerUnit: Double, val symbol: String) {
+    MILLIMETRES(1.0, "mm"),
+    INCHES(25.4, "in");
 
     fun fromMm(mm: Double): Double = mm / mmPerUnit
     fun toMm(value: Double): Double = value * mmPerUnit

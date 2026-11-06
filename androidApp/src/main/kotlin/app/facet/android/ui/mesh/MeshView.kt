@@ -14,12 +14,14 @@ import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
@@ -32,8 +34,10 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
 import app.facet.android.ui.theme.Facet
+import app.facet.geometry.Vec3
 import app.facet.mesh.Mesh
 import app.facet.mesh.bounds
+import app.facet.mesh.raycast
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.max
@@ -76,6 +80,18 @@ fun rememberOrbitCamera(): OrbitCamera = remember { OrbitCamera() }
 /** Labels drawn on the model's width and height edges (already formatted, e.g. "118.6"). */
 data class DimensionLabels(val width: String, val height: String)
 
+/**
+ * Two-point measurement on the mesh (Scale check). Taps on the mesh call [onTap]; dragging a
+ * placed point calls [onDrag] with its index. Points are mesh-space mm.
+ */
+class MeasureOverlay(
+    val points: List<Vec3>,
+    /** Distance label at the middle of the line, already formatted. */
+    val label: String?,
+    val onTap: (Vec3) -> Unit,
+    val onDrag: (index: Int, point: Vec3) -> Unit,
+)
+
 @Composable
 fun MeshView(
     mesh: Mesh,
@@ -86,8 +102,10 @@ fun MeshView(
     showGround: Boolean = true,
     showAxes: Boolean = false,
     dimensions: DimensionLabels? = null,
+    measure: MeasureOverlay? = null,
 ) {
     val renderer = remember(mesh) { MeshRenderer(mesh) }
+    val measureState = rememberUpdatedState(measure)
     val textMeasurer = rememberTextMeasurer()
     val colors = Facet.colors
     val style = MeshStyle(
@@ -97,19 +115,29 @@ fun MeshView(
         grid = colors.textMuted.copy(alpha = 0.28f),
         shadow = Color.Black.copy(alpha = if (colors.isDark) 0.45f else 0.12f),
         dimension = colors.accentInk,
+        pointFill = Color.White,
         labelBg = colors.bg,
         labelStyle = Facet.type.dataMono.copy(color = colors.accentInk),
         axisLabelStyle = Facet.type.dataMono.copy(color = colors.textMuted),
     )
 
-    val gestures = if (!interactive) Modifier else Modifier.pointerInput(camera) {
+    val gestures = if (!interactive) Modifier else Modifier.pointerInput(camera, renderer) {
         awaitEachGesture {
-            awaitFirstDown(requireUnconsumed = false)
+            val down = awaitFirstDown(requireUnconsumed = false)
+            // Measuring: a press on a placed point drags it; a tap elsewhere on the mesh places one.
+            val dragIndex = measureState.value?.let { renderer.pointNear(it.points, down.position, POINT_GRAB_DP.dp.toPx()) } ?: -1
+            var travel = 0f
+            var multiTouch = false
             do {
                 val event = awaitPointerEvent()
                 val pressed = event.changes.count { it.pressed }
-                if (pressed == 1) {
+                if (pressed >= 2) multiTouch = true
+                if (pressed == 1 && dragIndex >= 0 && !multiTouch) {
+                    val change = event.changes.first { it.pressed }
+                    renderer.hit(change.position)?.let { measureState.value?.onDrag(dragIndex, it) }
+                } else if (pressed == 1) {
                     val delta = event.changes.first { it.pressed }.positionChange()
+                    travel += delta.getDistance()
                     val perPx = (PI / size.width).toFloat()
                     camera.yaw -= delta.x * perPx
                     camera.pitch = OrbitCamera.clampPitch(camera.pitch + delta.y * perPx)
@@ -121,6 +149,10 @@ fun MeshView(
                 }
                 event.changes.forEach { if (it.positionChange() != Offset.Zero) it.consume() }
             } while (event.changes.any { it.pressed })
+            val m = measureState.value
+            if (m != null && dragIndex < 0 && !multiTouch && travel < viewConfiguration.touchSlop) {
+                renderer.hit(down.position)?.let(m.onTap)
+            }
         }
     }
 
@@ -130,8 +162,11 @@ fun MeshView(
         drawIntoCanvas { renderer.drawMesh(it.nativeCanvas, style, wireframe) }
         if (dimensions != null) drawDimensions(renderer, dimensions, style, textMeasurer)
         if (showAxes) drawAxes(renderer, style, textMeasurer)
+        measure?.let { drawMeasure(renderer, it, style, textMeasurer) }
     }
 }
+
+private const val POINT_GRAB_DP = 28
 
 internal data class MeshStyle(
     val shadeDark: Color,
@@ -140,6 +175,7 @@ internal data class MeshStyle(
     val grid: Color,
     val shadow: Color,
     val dimension: Color,
+    val pointFill: Color,
     val labelBg: Color,
     val labelStyle: TextStyle,
     val axisLabelStyle: TextStyle,
@@ -213,6 +249,37 @@ internal class MeshRenderer(private val mesh: Mesh) {
         out[0] = originX + x1 * f
         out[1] = originY - up * f
         out[2] = depth
+    }
+
+    /** Model-space point from view space (right, up, depth): the inverse of [project]'s rotation. */
+    private fun viewToModel(right: Float, up: Float, depth: Float): Vec3 {
+        val y1 = up * sinPitch + depth * cosPitch
+        val qz = up * cosPitch - depth * sinPitch
+        val qx = right * cosYaw + y1 * sinYaw
+        val qy = -right * sinYaw + y1 * cosYaw
+        return Vec3((qx + cx).toDouble(), (qy + cy).toDouble(), (qz + cz).toDouble())
+    }
+
+    /** The mesh point under a screen position, or null (ray from the eye through the pixel). */
+    fun hit(screen: Offset): Vec3? {
+        if (width <= 0f) return null
+        val eye = viewToModel(0f, 0f, -camDist)
+        // At depth 0 the projection scale is exactly pxPerUnit.
+        val through = viewToModel((screen.x - originX) / pxPerUnit, -(screen.y - originY) / pxPerUnit, 0f)
+        return mesh.raycast(eye, through - eye)
+    }
+
+    /** Index of the point drawn within [radiusPx] of [screen], nearest first; -1 if none. */
+    fun pointNear(points: List<Vec3>, screen: Offset, radiusPx: Float): Int {
+        val out = FloatArray(3)
+        var best = -1
+        var bestD = radiusPx
+        points.forEachIndexed { i, p ->
+            project(p.x.toFloat(), p.y.toFloat(), p.z.toFloat(), out)
+            val d = (Offset(out[0], out[1]) - screen).getDistance()
+            if (d <= bestD) { bestD = d; best = i }
+        }
+        return best
     }
 
     /** Rotation only (for the axis triad): returns screen direction of a model axis. */
@@ -404,5 +471,19 @@ private fun DrawScope.drawAxes(r: MeshRenderer, style: MeshStyle, tm: TextMeasur
         drawLine(color, origin, end, strokeWidth = 2.dp.toPx())
         val layout = tm.measure(name, style.axisLabelStyle)
         drawText(layout, topLeft = origin + dir * (len + 8.dp.toPx()) - Offset(layout.size.width / 2f, layout.size.height / 2f))
+    }
+}
+
+private fun DrawScope.drawMeasure(r: MeshRenderer, m: MeasureOverlay, style: MeshStyle, tm: TextMeasurer) {
+    val out = FloatArray(3)
+    val screen = m.points.map { p -> r.project(p.x.toFloat(), p.y.toFloat(), p.z.toFloat(), out); Offset(out[0], out[1]) }
+    if (screen.size == 2) {
+        drawLine(style.dimension, screen[0], screen[1], strokeWidth = 3.dp.toPx())
+        m.label?.let { label(tm, it, (screen[0] + screen[1]) / 2f + Offset(0f, -18.dp.toPx()), style) }
+    }
+    val radius = 9.dp.toPx()
+    for (p in screen) {
+        drawCircle(style.pointFill, radius, p)
+        drawCircle(style.dimension, radius, p, style = Stroke(2.5.dp.toPx()))
     }
 }

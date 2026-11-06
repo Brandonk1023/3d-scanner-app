@@ -4,6 +4,8 @@ import app.facet.data.db.ScanDao
 import app.facet.data.db.toEntity
 import app.facet.data.db.toScan
 import app.facet.mesh.Mesh
+import app.facet.mesh.bounds
+import app.facet.mesh.scaled
 import app.facet.platform.StorageUsage
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -56,6 +58,19 @@ class RoomScanRepository(
     override suspend fun nextScanName(): String = nextFreeScanName(dao.names().toSet())
 
     override suspend fun rename(id: String, name: String) = dao.rename(id, name)
+
+    override suspend fun applyScale(id: String, factor: Double, reference: String) {
+        val scan = dao.get(id)?.toScan() ?: return
+        val result = withContext(io) {
+            val mesh = MeshFiles.read(fs, modelPath(id)) ?: return@withContext null
+            val scaled = mesh.scaled(factor)
+            val thumb = (MeshFiles.read(fs, thumbPath(id)) ?: mesh).scaled(factor)
+            MeshFiles.write(fs, modelPath(id), scaled)
+            MeshFiles.write(fs, thumbPath(id), thumb)
+            scaled
+        } ?: return
+        dao.upsert(scan.copy(size = result.bounds().size, scaleReference = reference).toEntity())
+    }
 
     override suspend fun delete(id: String) {
         dao.delete(id)

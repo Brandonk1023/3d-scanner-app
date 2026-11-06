@@ -20,6 +20,7 @@ import app.facet.android.ui.permission.CameraPermissionScreen
 import app.facet.android.ui.permission.hasCameraPermission
 import app.facet.android.ui.scan.ScanScreen
 import app.facet.android.ui.settings.NativeLibrariesScreen
+import app.facet.android.ui.scale.ScaleCheckScreen
 import app.facet.android.ui.settings.SettingsScreen
 import app.facet.android.ui.stub.StubLink
 import app.facet.android.ui.stub.StubScreen
@@ -32,7 +33,7 @@ import app.facet.settings.ThemeMode
 
 /**
  * Navigation graph (design/docs/02-user-flow.md). Phase 1: real screens for first launch, gallery,
- * settings, viewer and export; Phase 2: scan placement. Processing and scale check stay stubs.
+ * settings, viewer and export; Phase 2: scan placement; Phase 6: manual scale check. Processing stays a stub.
  */
 @Composable
 fun FacetNavHost(
@@ -173,13 +174,9 @@ fun FacetNavHost(
             )
         }
 
-        composable<ScaleCheck> {
-            StubScreen(
-                title = stringResource(R.string.check_scale),
-                reference = "Scale-Auto.png, Scale-Manual.png",
-                onBack = { nav.popBackStack() },
-                links = listOf(StubLink(R.string.apply_scale, primary = true) { nav.popBackStack() }),
-            )
+        composable<ScaleCheck> { entry ->
+            // Manual flow. Coin auto-detection (Scale-Auto.png) needs real keyframes: still to do.
+            ScaleCheckScreen(entry.toRoute<ScaleCheck>().scanId, onBack = { nav.popBackStack() })
         }
 
         composable<Export> { entry ->

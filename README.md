@@ -7,7 +7,9 @@ v1 exports STL and 3MF.
 - Design handoff and specs: [`design/`](design/) (start with `design/docs/01-product-spec.md`)
 - Project structure: [`design/docs/07-multiplatform.md`](design/docs/07-multiplatform.md)
 
-**Status:** Phase 4 (Quick result) and Phase 5 (export and gallery persistence) are done. On Finish,
+**Status:** Phases 4 (Quick result), 5 (export and gallery persistence) and the manual half of 6
+(scale check: tap two points on the mesh, type the real length, apply a uniform scale) are done.
+Coin auto-detection for the scale check still needs real keyframes from the phone. On Finish,
 the final mesh is cleaned up in the C++ core (table removed and the base rebuilt flat, largest piece
 kept, Taubin smoothing from Settings, holes filled for a watertight mesh), then repaired, decimated
 and saved. Phase 3 capture and the cleanup values in `ScanTuning.Cleanup` still need on-device

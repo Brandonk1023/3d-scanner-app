@@ -30,6 +30,12 @@ fun formatLength(mm: Double, unit: LengthUnit): String = when (unit) {
 fun formatDims(size: BoxSize, unit: LengthUnit): Triple<String, String, String> =
     Triple(formatLength(size.widthMm, unit), formatLength(size.depthMm, unit), formatLength(size.heightMm, unit))
 
+/** A fraction as a signed percentage with 2 decimals: 0.0166 → "+1.66%", -0.05 → "-5.00%". */
+fun formatSignedPercent(fraction: Double): String {
+    val text = formatFixed(fraction * 100, 2)
+    return if (text.startsWith("-")) "$text%" else "+$text%"
+}
+
 /** Triangle counts: 640, 6.7k, 86k, 1.2M. */
 fun formatCount(count: Int): String = when {
     count < 1_000 -> count.toString()
